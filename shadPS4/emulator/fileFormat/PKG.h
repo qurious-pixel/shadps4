@@ -1,9 +1,22 @@
 #pragma once
 #include <string>
-#include "../../Types.h"
-#include <io.h>
+#include <unordered_map>
 #include <windows.h>
 #include <stdio.h>
+#include <vector>
+#include <array>
+#include <io.h>
+#include <QtZlib/zlib.h>
+#include <QDirIterator>
+#include <QString>
+#include <QDir>
+#include <QMap>
+#include "../../Types.h"
+#include "crypto.h"
+#include "PFS_HEADERS.h"
+
+
+
 
 struct PKGHeader {
 	/*BE*/U32 magic;// Magic
@@ -86,7 +99,21 @@ struct PKGEntry {
 	U32 offset;           // Offset into PKG to find the file
 	U32 size;             // Size of the file
 	U64 padding;          // blank padding
+
+	CryptoPP::byte* GetBytes() const {
+		CryptoPP::byte* buf = new CryptoPP::byte[sizeof(PKGEntry)+8];//forgot why I added 8 but I had to. padding maybe?? was necessary!!
+		std::memcpy(buf, this, sizeof(PKGEntry)+8);
+		return buf;
+	}
 };
+
+inline void concatenate(CryptoPP::byte* a, CryptoPP::byte* b, CryptoPP::byte* dst)
+{
+	size_t size1 = 32;
+	size_t size2 = 32;
+	std::memcpy(dst, a, size1);
+	std::memcpy(dst + size1, b, size2);
+}
 
 inline void ReadBE(PKGEntry& s)
 {
@@ -99,6 +126,31 @@ inline void ReadBE(PKGEntry& s)
 	ReadBE(s.padding);
 }
 
+inline void WriteBE(PKGEntry& s)
+{
+	WriteBE(s.id);
+	WriteBE(s.filename_offset);
+	WriteBE(s.flags1);
+	WriteBE(s.flags2);
+	WriteBE(s.offset);
+	WriteBE(s.size);
+	WriteBE(s.padding);
+}
+
+struct Crypto_Keys
+{
+	CryptoPP::byte* dk3_ = nullptr;
+	CryptoPP::byte* ivkey = nullptr;
+	CryptoPP::byte* imgkey = nullptr;
+	CryptoPP::byte* ekpfs_key = nullptr;
+
+	CryptoPP::byte* data_tweak_key = nullptr;
+	CryptoPP::byte* dataKey = nullptr;
+	CryptoPP::byte* tweakKey = nullptr;
+};
+
+
+
 class PKG
 {
 private:
@@ -106,8 +158,9 @@ private:
 	U64 pkgSize = 0;
 	S08 pkgTitleID[9];
 	std::string extractPath;
-
+	
 public:
+	Crypto crypto;
 	PKG();
 	~PKG();
 	bool open(const std::string& filepath);
@@ -121,7 +174,7 @@ public:
 	}
 	bool extract(const std::string& filepath, const std::string& extractPath, std::string& failreason);
 
-	void* mmap(size_t sLength, std::FILE* nFd) {
+	void* mmap(size_t sLength, std::FILE* nFd, size_t offset) {
 		HANDLE hHandle;
 		void* pStart;
 		hHandle = CreateFileMapping(
@@ -133,7 +186,7 @@ public:
 			NULL);                 // name of mapping object
 
 		if (hHandle != NULL) {
-			pStart = MapViewOfFile(hHandle, FILE_MAP_COPY, 0, 0, sLength);
+			pStart = MapViewOfFile(hHandle, FILE_MAP_COPY, 0, offset, sLength);
 		}
 		if(pStart == NULL)
 		{
@@ -147,6 +200,97 @@ public:
 
 		return TRUE;
 	}
+
+	void* mmappfs(size_t offset, size_t sLength, std::FILE* nFd) {
+		HANDLE hHandle;
+		void* pStart;
+		hHandle = CreateFileMapping(
+			(HANDLE)_get_osfhandle(_fileno((nFd))),
+			NULL, PAGE_WRITECOPY, 0, 0, NULL);               // name of mapping object
+
+		if (hHandle != NULL) {
+			pStart = MapViewOfFile(hHandle, FILE_MAP_COPY, 0, offset, sLength);
+		}
+		if (pStart == NULL)
+		{
+			return nullptr;
+		}
+		return pStart;
+	}
+
+	int get_pfsc_pos(U08* pfs_image, int length)
+	{
+		S32 magic = 0x43534650; // PFSC.
+		int value;
+
+		for (int i = 0x20000; i < length; i += 0x10000) // start at 0x20000
+		{
+			std::memcpy(&value, &pfs_image[i], sizeof(int));
+			if (value == magic)
+				return i;
+		}
+		return -1;
+	}
+
+	void createDirectory(const QString& path) {
+		QDir dir(path);
+
+		if (!dir.exists()) {
+			if (dir.mkpath(".")) {
+			//	qDebug() << "Directory created successfully: " << path;
+			//	return true;
+			}
+			else {
+			//	qWarning() << "Failed to create directory: " << path;
+			//	return false;
+			}
+		}
+		else {
+			//qDebug() << "Directory already exists: " << path;
+			//return true;
+		}
+	}
+
+	QString findDirectory(const QDir& rootFolder, const QString& targetDirectory) {
+		QStringList filters;
+		filters << targetDirectory;
+
+		QDirIterator it(rootFolder.absolutePath(), filters, QDir::Dirs | QDir::NoSymLinks | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+		while (it.hasNext()) {
+			it.next();
+			if (it.fileInfo().isDir() && it.fileInfo().fileName() == targetDirectory) {
+				return it.filePath();
+			}
+		}
+		return QString();  // Return an empty string if not found
+	}
+
+	void decompress_pfsc(char* &compressedData, size_t compressedSize, char* &decompressedData, size_t decompressedSize) {
+
+		z_stream decompressStream;
+		decompressStream.zalloc = Z_NULL;
+		decompressStream.zfree = Z_NULL;
+		decompressStream.opaque = Z_NULL;
+
+		if (inflateInit(&decompressStream) != Z_OK) {
+			//std::cerr << "Error initializing zlib for deflation." << std::endl;
+		}
+
+		decompressStream.avail_in = compressedSize;
+		decompressStream.next_in = (Bytef*)(compressedData);
+
+		decompressStream.avail_out = decompressedSize;
+		decompressStream.next_out = (Bytef*)(decompressedData);
+
+		if (inflate(&decompressStream, Z_FINISH)){}
+
+		if (inflateEnd(&decompressStream) != Z_OK) {
+			//std::cerr << "Error ending zlib inflate" << std::endl;
+		}
+	}
+
+	
+
 	typedef struct {
 		U32 type;
 		std::string name;
