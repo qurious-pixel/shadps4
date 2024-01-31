@@ -190,10 +190,11 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath, s
 	}
 
 	int ent_size = 0;
-	Inode* iNode_buf;
-	int ndblock = 0;
+	std::vector<Inode> iNode_buf;
+	int ndinode = 0;
 	std::vector<pfs_fs_table> fs_table;
 	std::unordered_map <int, std::string> folder_map;
+
 
 	for (int i = 0; i < num_blocks; i++)
 	{
@@ -201,44 +202,49 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath, s
 		U64 sectorSize = sectorMap[i + 1] - sectorOffset;
 
 		char* compressedData = new char[sectorSize];
-		char* data_decompressed_buf = new char[0x10000];
+		char* decompressedData = new char[0x10000];
 
 		std::memcpy(compressedData, pfsc + sectorOffset, sectorSize);
 
 		if (sectorSize == 0x10000) // Uncompressed data 
-			std::memcpy(data_decompressed_buf, compressedData, 0x10000);
+			std::memcpy(decompressedData, compressedData, 0x10000);
 		else if (sectorSize < 0x10000) // Compressed data
-			decompress_pfsc(compressedData, sectorSize, data_decompressed_buf, 0x10000);
+			decompress_pfsc(compressedData, sectorSize, decompressedData, 0x10000);
 
 		if (i == 0)
 		{
-			std::memcpy(&ndblock, data_decompressed_buf + 0x30, 4); // number of folders and files
+			std::memcpy(&ndinode, decompressedData + 0x30, 4); // number of folders and files
 		}
 
-		if (i == 1) // Get all iNodes, gives type, file size and location.
+		int occupied_blocks = (ndinode * 0xA8) / 0x10000; // how many blocks(0x10000) are taken by iNodes.
+		if (((ndinode * 0xA8) % 0x10000) != 0)
+			occupied_blocks += 1;
+
+		if (i >= 1 && i <= occupied_blocks) // Get all iNodes, gives type, file size and location.
 		{
-			iNode_buf = new Inode[ndblock - 1];
-
-			for (int p = 0xA8; p < 0xA8 * (ndblock); p += 0xA8)//skip uroot, not needed.
+			for (int p = 0; p < 0x10000; p += 0xA8)
 			{
-				iNode_buf[(p / 0xA8) - 1] = (Inode&)data_decompressed_buf[p];
-
-				if (iNode_buf[(p / 0xA8) - 1].Mode == 0)
+				Inode tmp = (Inode&)decompressedData[p];
+				if (tmp.Mode == 0)
 					break;
 
+				iNode_buf.push_back((Inode&)decompressedData[p]);
 			}
 		}
 
-		if (i > 4) { // start at 0x50000 of the decompressed data.
+		int block_jump = ((ndinode * 0xA8) / 0x10000);
 
-			Dirent dirent = (Dirent&)data_decompressed_buf[0];
+		if (i > 4 + block_jump) { // start at 0x50000 + blocks occupied by inode
 
-			if (dirent.ino > 200) //we only need to get file and folder info from here, start a new loop to decompress the data nblock by nblock and save files to folders.
+			Dirent dirent = (Dirent&)decompressedData[0];
+
+			std::string keystone_(&decompressedData[0], 8);
+			if (keystone_ == "keystone" || dirent.ino > 100000)// keystone starts right after the last dinode block.
 				break;
 
-			for (int j = 0; j < 0x500; j += ent_size) //skip the first parent and child.
+			for (int j = 0; j < 0x5000; j += ent_size) //skip the first parent and child.
 			{
-				Dirent dirent1 = (Dirent&)data_decompressed_buf[j];
+				Dirent dirent1 = (Dirent&)decompressedData[j];
 
 				if (dirent1.ino == 0)  //stop here and continue the main loop
 					break;
@@ -259,7 +265,7 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath, s
 			}
 		}
 		delete[] compressedData;
-		delete[] data_decompressed_buf;
+		delete[] decompressedData;
 	}
 
 
@@ -272,7 +278,7 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath, s
 
 	PKG::createDirectory(game_dir_ + (folder_map[2].c_str()));
 
-	for (int i = 0; i < fs_table.size(); i++)//skip uroot folder. we create our own game uid folder, skip last folder as well
+	for (int i = 0; i < fs_table.size(); i++)
 	{
 		int inode_number = fs_table[i].inode;
 		int inode_type = fs_table[i].type;
@@ -286,7 +292,7 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath, s
 		{
 			parentDir = folder_map[inode_number].c_str();
 
-			if (i > 1) {
+			if (i > 1) {//skip uroot folder. we create our own game uid folder
 				QString par_dir;
 
 				if (inode_number == 2) //Check the parent dir first.
@@ -310,9 +316,9 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath, s
 		}
 		else if (inode_type == PFS_FILE)
 		{
-			int sector_loc = iNode_buf[inode_number - 1].loc;
-			int nblocks = iNode_buf[inode_number - 1].Blocks;
-			int bsize = iNode_buf[inode_number - 1].Size;
+			int sector_loc = iNode_buf[inode_number].loc;
+			int nblocks = iNode_buf[inode_number].Blocks;
+			int bsize = iNode_buf[inode_number].Size;
 			std::string file_extracted = extract_path.toStdString() + "/" + inode_name;
 
 			FsFile inflated;
@@ -339,7 +345,7 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath, s
 				if (j < nblocks - 1)
 					inflated.Write(data_decompressed_buf, 0x10000);
 				else
-					inflated.Write(data_decompressed_buf, 0x10000 - (size_decompressed - bsize));
+					inflated.Write(data_decompressed_buf, 0x10000 - (size_decompressed - bsize)); // This is to remove the zeros.
 
 				delete[] compressedData;
 				delete[] data_decompressed_buf;
@@ -347,11 +353,12 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath, s
 			inflated.Close();
 		}
 	}
-	delete[] iNode_buf;
+
 	delete[] pfsc;
 	delete[] sectorMap;
 	fs_table.clear();
 	folder_map.clear();
+	iNode_buf.clear();
 
 	return true;
 }

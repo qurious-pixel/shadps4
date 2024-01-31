@@ -107,11 +107,11 @@ struct Inode //UNSIGNED, LE
     U32 loc;
 };
 
-typedef struct {
+struct pfs_fs_table {
     std::string name;
     U32 inode;
     U32 type;
-} pfs_fs_table;
+};
 
 
 struct Dirent {
