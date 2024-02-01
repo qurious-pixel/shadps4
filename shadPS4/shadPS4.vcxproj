@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\FsFile.cpp" />
+    <ClCompile Include="emulator\fileFormat\crypto.cpp" />
     <ClCompile Include="emulator\fileFormat\PKG.cpp" />
     <ClCompile Include="emulator\fileFormat\PSF.cpp" />
     <ClCompile Include="emulator\Loader.cpp" />
@@ -39,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\FsFile.h" />
+    <ClInclude Include="emulator\fileFormat\crypto.h" />
     <ClInclude Include="emulator\fileFormat\PKG.h" />
     <ClInclude Include="emulator\fileFormat\PSF.h" />
     <ClInclude Include="emulator\gameInfo.h" />
@@ -55,7 +57,9 @@
     <QtMoc Include="gui\settings.h" />
     <QtMoc Include="gui\main_window.h" />
     <ClInclude Include="gui\qt_utils.h" />
+    <ClInclude Include="emulator\fileFormat\PFS_HEADERS.h" />
     <ClInclude Include="Types.h" />
+    <ClInclude Include="emulator\fileFormat\Keys.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F005E4D9-1FBE-40B3-9FBD-35CEC59081CD}</ProjectGuid>
@@ -78,12 +82,11 @@
     <Import Project="$(QtMsBuild)\qt_defaults.props" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
-    <QtInstall>6.4.2</QtInstall>
+    <QtInstall>6.6.1_msvc2019_64</QtInstall>
     <QtModules>core;gui;widgets;concurrent</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
-    <QtInstall>6.4.2</QtInstall>
     <QtModules>core;gui;widgets;concurrent</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
@@ -105,13 +108,29 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\ext\cryptopp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>..\ext\cryptopp\lib\cryptlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -124,7 +143,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DebugInformationFormat>None</DebugInformationFormat>
       <Optimization>MaxSpeed</Optimization>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

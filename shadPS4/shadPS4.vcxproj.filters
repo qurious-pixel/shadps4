@@ -86,6 +86,9 @@
     <ClCompile Include="gui\main_window.cpp">
       <Filter>gui\main window</Filter>
     </ClCompile>
+    <ClCompile Include="emulator\fileFormat\crypto.cpp">
+      <Filter>emulator\fileFormat</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="gui\shadps4gui.ui">
@@ -157,6 +160,15 @@
     </ClInclude>
     <ClInclude Include="gui\custom_table_widget_item.h">
       <Filter>gui\game list</Filter>
+    </ClInclude>
+    <ClInclude Include="emulator\fileFormat\crypto.h">
+      <Filter>emulator\fileFormat</Filter>
+    </ClInclude>
+    <ClInclude Include="emulator\fileFormat\Keys.h">
+      <Filter>emulator\fileFormat</Filter>
+    </ClInclude>
+    <ClInclude Include="emulator\fileFormat\PFS_HEADERS.h">
+      <Filter>emulator\fileFormat</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
