@@ -164,16 +164,15 @@ void Crypto::PfsGenCryptoKey(CryptoPP::byte* &data_tweak_key, CryptoPP::byte* &e
 }
 
 void Crypto::decryptPFS(CryptoPP::byte* dataKey, CryptoPP::byte* tweakKey,
-    U08* src_image, CryptoPP::byte*& dst_image, int length)
+    U08* src_image, CryptoPP::byte*& dst_image, int length, U64 sector) // add int start when we need to get header info later.
 {
-    for (int i = 0x10000; i < length; i += 0x1000)
+    for (int i = 0; i < length; i += 0x1000)// start at 0x10000 if we want to keep the header when decrypting the whole pfs_image. But we don't need it for now.
     {
-        U64 currentSector = i / 0x1000;
+        U64 currentSector = sector + (i / 0x1000);
         SecByteBlock keydata(AES::DEFAULT_KEYLENGTH); keydata.Assign(dataKey, 16);
         SecByteBlock keytweak(AES::DEFAULT_KEYLENGTH); keytweak.Assign(tweakKey, 16);
         CryptoPP::ECB_Mode<CryptoPP::AES>::Encryption encc; encc.SetKey(keytweak, 16);
         CryptoPP::ECB_Mode<CryptoPP::AES>::Decryption decc; decc.SetKey(keydata, 16);
-
 
         CryptoPP::byte* tweak = new CryptoPP::byte[16];
         CryptoPP::byte* encryptedTweak = new CryptoPP::byte[16];

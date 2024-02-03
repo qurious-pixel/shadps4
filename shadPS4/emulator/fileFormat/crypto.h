@@ -26,7 +26,7 @@ public:
 	void ivKeyHASH256(CryptoPP::byte* cipher_input, CryptoPP::byte*& ivkey_result);
 	void aesCbcCfb128Decrypt(CryptoPP::byte* ivkey, CryptoPP::byte* ciphertext, CryptoPP::byte*& decrypted);
 	void PfsGenCryptoKey(CryptoPP::byte*& data_tweak_key, CryptoPP::byte*& ekpfs, CryptoPP::byte* seed, CryptoPP::byte*& dataKey, CryptoPP::byte*& tweakKey);
-	void decryptPFS(CryptoPP::byte* dataKey, CryptoPP::byte* tweakKey, U08* src_image, CryptoPP::byte*& dst_image, int length);
+	void decryptPFS(CryptoPP::byte* dataKey, CryptoPP::byte* tweakKey, U08* src_image, CryptoPP::byte*& dst_image, int length, U64 sector);
 
 	void xtsXorBlock(CryptoPP::byte* x, const CryptoPP::byte* a, const CryptoPP::byte* b)
 	{

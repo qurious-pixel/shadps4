@@ -14,7 +14,7 @@
 #include "../../Types.h"
 #include "crypto.h"
 #include "PFS_HEADERS.h"
-
+#include <qapplication.h>
 
 
 
@@ -180,13 +180,13 @@ public:
 		hHandle = CreateFileMapping(
 			(HANDLE)_get_osfhandle(_fileno((nFd))),
 			NULL,                    // default security
-			PAGE_WRITECOPY,          // read/write access
+			PAGE_READONLY,          // read/write access
 			0,                       // maximum object size (high-order DWORD)
 			0,                // maximum object size (low-order DWORD)
 			NULL);                 // name of mapping object
 
 		if (hHandle != NULL) {
-			pStart = MapViewOfFile(hHandle, FILE_MAP_COPY, 0, offset, sLength);
+			pStart = MapViewOfFile(hHandle, FILE_MAP_READ, 0, offset, sLength);
 		}
 		if(pStart == NULL)
 		{
@@ -197,25 +197,8 @@ public:
 	int munmap(void* pStart) {
 		if (UnmapViewOfFile(pStart) != 0)
 			return FALSE;
-
+		CloseHandle(pStart);
 		return TRUE;
-	}
-
-	void* mmappfs(size_t offset, size_t sLength, std::FILE* nFd) {
-		HANDLE hHandle;
-		void* pStart;
-		hHandle = CreateFileMapping(
-			(HANDLE)_get_osfhandle(_fileno((nFd))),
-			NULL, PAGE_WRITECOPY, 0, 0, NULL);               // name of mapping object
-
-		if (hHandle != NULL) {
-			pStart = MapViewOfFile(hHandle, FILE_MAP_COPY, 0, offset, sLength);
-		}
-		if (pStart == NULL)
-		{
-			return nullptr;
-		}
-		return pStart;
 	}
 
 	int get_pfsc_pos(U08* pfs_image, int length)
