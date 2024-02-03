@@ -100,5 +100,38 @@ private:
 	qreal m_margin_factor;
 	qreal m_text_factor;
 
+	QString formatSize(qint64 size) {
+		static const QStringList suffixes = { "B", "KB", "MB", "GB", "TB" };
+		int suffixIndex = 0;
+
+		while (size >= 1024 && suffixIndex < suffixes.size() - 1) {
+			size /= 1024;
+			++suffixIndex;
+		}
+
+		return QString("%1 %2").arg(size).arg(suffixes[suffixIndex]);
+	}
+
+	QString getFolderSize(const QDir& dir) {
+
+		QDirIterator it(dir.absolutePath(), QDirIterator::Subdirectories);
+		qint64 total = 0;
+
+		while (it.hasNext()) {
+			// check if entry is file 
+			if (it.fileInfo().isFile()) {
+				total += it.fileInfo().size();
+			}
+			it.next();
+		}
+
+		// if there is a file left "at the end" get it's size
+		if (it.fileInfo().isFile()) {
+			total += it.fileInfo().size();
+		}
+
+		return formatSize(total);
+	}
+
 };
 

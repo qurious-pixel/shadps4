@@ -72,6 +72,7 @@ game_list_frame::game_list_frame(std::shared_ptr<gui_settings> gui_settings, QWi
 	add_column(gui::column_name, tr("Name"), tr("Show Names"));
 	add_column(gui::column_serial, tr("Serial"), tr("Show Serials"));
 	add_column(gui::column_firmware, tr("Firmware"), tr("Show Firmwares"));
+	add_column(gui::column_size, tr("Size"), tr("Show Size"));
 	add_column(gui::column_version, tr("Version"), tr("Show Versions"));
 	add_column(gui::column_category, tr("Category"), tr("Show Categories"));
 	add_column(gui::column_path, tr("Path"), tr("Show Paths"));
@@ -409,10 +410,15 @@ void game_list_frame::PopulateGameList()
 		// Version
 		QString app_version = QString::fromStdString(game->info.version);
 
+		QDir dir(QString::fromStdString(game->info.path));
+
+		QString game_size = getFolderSize(dir);
+
 		m_game_list->setItem(row, gui::column_icon, icon_item);
 		m_game_list->setItem(row, gui::column_name, title_item);
 		m_game_list->setItem(row, gui::column_serial, serial_item);
 		m_game_list->setItem(row, gui::column_firmware, new custom_table_widget_item(game->info.fw));
+		m_game_list->setItem(row, gui::column_size, new custom_table_widget_item(game_size));
 		m_game_list->setItem(row, gui::column_version, new custom_table_widget_item(app_version));
 		m_game_list->setItem(row, gui::column_category, new custom_table_widget_item(game->info.category));
 		m_game_list->setItem(row, gui::column_path, new custom_table_widget_item(game->info.path));
