@@ -244,7 +244,6 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath, s
 	}
 
 	// Get folder and file names.
-	bool breakLoop = false;
 	for (int i = dinodePos; i < num_blocks; i++)
 	{
 		U64 sectorOffset = sectorMap[i];
@@ -286,14 +285,11 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath, s
 			}
 		}
 
-		if (breakLoop) {
+		if (rightsprx == "right.sprx") { // Seems to be the last entry, at least for the games I tested. To check as we go.
 			delete[] compressedData;
 			delete[] decompressedData;
 			break;
 		}
-		if (rightsprx == "right.sprx") // Seems to be the last entry, at least for the games I tested. To check as we go.
-			breakLoop = true;
-
 		delete[] compressedData;
 		delete[] decompressedData;
 	}
@@ -433,6 +429,6 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath, s
 	fs_table.clear();
 	folder_map.clear();
 	iNode_buf.clear();
-	
+
 	return true;
 }

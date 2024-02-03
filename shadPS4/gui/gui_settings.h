@@ -16,10 +16,10 @@ namespace gui
 		column_name,
 		column_serial,
 		column_firmware,
+		column_size,
 		column_version,
 		column_category,
 		column_path,
-
 		column_count
 	};
 
@@ -35,6 +35,8 @@ namespace gui
 			return "column_serial";
 		case column_firmware:
 			return "column_firmware";
+		case column_size:
+			return "column_size";
 		case column_version:
 			return "column_version";
 		case column_category:
