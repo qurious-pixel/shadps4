@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include "endianness.h"
+
 using s08 = std::int8_t;
 using s16 = std::int16_t;
 using s32 = std::int32_t;
@@ -28,3 +30,11 @@ constexpr u64 operator""_MB(u64 x) {
 constexpr u64 operator""_GB(u64 x) {
     return 1024_MB * x;
 }
+
+/**
+ * Endianness
+ */
+template <typename T>
+using LE = NativeEndian<T>;
+template <typename T>
+using BE = SwappedEndian<T>;

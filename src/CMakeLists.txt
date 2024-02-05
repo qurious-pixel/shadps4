@@ -22,6 +22,7 @@ qt_add_executable(shadps4
     common/io_file.cpp
     common/io_file.h
     common/types.h
+    common/endianness.h
     main.cpp
 )
 
