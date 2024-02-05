@@ -14,6 +14,11 @@ qt_add_executable(shadps4
     qt_gui/game_list_table.cpp
     qt_gui/game_list_table.h
     qt_gui/game_info.h
+    qt_gui/game_list_grid.cpp
+    qt_gui/game_list_grid.h
+    qt_gui/game_list_grid_delegate.cpp
+    qt_gui/game_list_grid_delegate.h
+    qt_gui/qt_utils.h
     main.cpp
 )
 
