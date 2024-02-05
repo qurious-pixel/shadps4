@@ -1,7 +1,8 @@
 #pragma once
+#include <QColor>
 
 #include "settings.h"
-#include <QColor>
+
 
 namespace gui
 {
