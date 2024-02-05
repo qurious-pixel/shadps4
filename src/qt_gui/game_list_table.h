@@ -2,8 +2,9 @@
 
 #include <QTableWidget>
 #include <QMouseEvent>
-#include "../emulator/gameInfo.h"
+
 #include "game_list_item.h"
+#include "game_info.h"
 
 struct gui_game_info
 {

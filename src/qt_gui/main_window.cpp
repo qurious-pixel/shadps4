@@ -72,7 +72,7 @@ void main_window::CreateDockWindows()
 	m_main_window = new QMainWindow();
 	m_main_window->setContextMenuPolicy(Qt::PreventContextMenu);
 
-/*	m_game_list_frame = new game_list_frame(m_gui_settings, m_main_window);
+/*TODO	m_game_list_frame = new game_list_frame(m_gui_settings, m_main_window);
 	m_game_list_frame->setObjectName("gamelist");
 
 	m_main_window->addDockWidget(Qt::LeftDockWidgetArea, m_game_list_frame);
@@ -96,12 +96,12 @@ void main_window::CreateConnects()
 
 	connect(ui->showGameListAct, &QAction::triggered, this, [this](bool checked)
 	{
-//		checked ? m_game_list_frame->show() : m_game_list_frame->hide();
+//TODO		checked ? m_game_list_frame->show() : m_game_list_frame->hide();
 		m_gui_settings->SetValue(gui::main_window_gamelist_visible, checked);
 	});
 	connect(ui->refreshGameListAct, &QAction::triggered, this, [this]
 	{
-//		m_game_list_frame->Refresh(true);
+//TODO		m_game_list_frame->Refresh(true);
 	});
 
 	connect(m_icon_size_act_group, &QActionGroup::triggered, this, [this](QAction* act)
@@ -123,7 +123,7 @@ void main_window::CreateConnects()
 		m_save_slider_pos = true;
 		ResizeIcons(index);
 	});
-/*	connect(m_game_list_frame, &game_list_frame::RequestIconSizeChange, this, [this](const int& val)
+/*TODO	connect(m_game_list_frame, &game_list_frame::RequestIconSizeChange, this, [this](const int& val)
 	{
 		const int idx = ui->sizeSlider->value() + val;
 		m_save_slider_pos = true;
@@ -195,12 +195,12 @@ void main_window::ResizeIcons(int index)
 		SetIconSizeActions(index);
 	}
 
-//	m_game_list_frame->ResizeIcons(index);
+//TODO	m_game_list_frame->ResizeIcons(index);
 }
 void main_window::ConfigureGuiFromSettings()
 {
 	// Restore GUI state if needed. We need to if they exist.
-/*	if (!restoreGeometry(m_gui_settings->GetValue(gui::main_window_geometry).toByteArray()))
+/*TODO	if (!restoreGeometry(m_gui_settings->GetValue(gui::main_window_geometry).toByteArray()))
 	{
 		resize(QGuiApplication::primaryScreen()->availableSize() * 0.7);
 	}
@@ -236,12 +236,12 @@ void main_window::SaveWindowState() const
 	m_gui_settings->SetValue(gui::main_window_mwState, m_main_window->saveState());
 
 	// Save column settings
-//	m_game_list_frame->SaveSettings();
+//TODO	m_game_list_frame->SaveSettings();
 }
 
 void main_window::InstallPkg()
 {
-/*	std::string file(QFileDialog::getOpenFileName(this, tr("Install PKG File"), QDir::currentPath(), tr("PKG File (*.PKG)")).toStdString());
+/*TODO	std::string file(QFileDialog::getOpenFileName(this, tr("Install PKG File"), QDir::currentPath(), tr("PKG File (*.PKG)")).toStdString());
 	if (detectFileType(file) == FILETYPE_PKG)
 	{
 		PKG pkg;

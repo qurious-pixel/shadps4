@@ -1,6 +1,8 @@
 #pragma once
-#include "game_list_item.h"
+
 #include <QTableWidgetItem>
+
+#include "game_list_item.h"
 
 class custom_table_widget_item : public game_list_item
 {

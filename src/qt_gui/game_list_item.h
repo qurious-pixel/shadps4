@@ -1,9 +1,9 @@
 #pragma once
 
+#include <functional>
+
 #include <QTableWidgetItem>
 #include <QObject>
-
-#include <functional>
 
 using icon_callback_t = std::function<void(int)>;
 

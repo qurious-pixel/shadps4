@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>RPCS3</string>
+   <string>Shadps4</string>
   </property>
   <property name="autoFillBackground">
    <bool>false</bool>
@@ -207,7 +207,7 @@
     <string>Exit</string>
    </property>
    <property name="toolTip">
-    <string>Exit RPCS3</string>
+    <string>Exit Shadps4</string>
    </property>
    <property name="statusTip">
     <string>Exit the application.</string>
@@ -283,7 +283,7 @@
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources>
-  <include location="../../../rpcs3/rpcs3/resources.qrc"/>
+  <include location="../../../shadps4/shadps4/resources.qrc"/>
  </resources>
  <connections/>
 </ui>

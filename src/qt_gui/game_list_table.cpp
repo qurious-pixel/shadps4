@@ -1,6 +1,6 @@
 #include "game_list_table.h"
 
-void game_list_table ::clear_list()
+void game_list_table::clear_list()
 {
 	clearSelection();
 	clearContents();

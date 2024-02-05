@@ -1,11 +1,11 @@
 #pragma once
 
+#include <memory>
+
 #include <QSettings>
 #include <QDir>
 #include <QVariant>
 #include <QSize>
-
-#include <memory>
 
 #include "gui_save.h"
 

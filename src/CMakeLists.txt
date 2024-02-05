@@ -7,6 +7,13 @@ qt_add_executable(shadps4
     qt_gui/settings.cpp
     qt_gui/settings.h
     qt_gui/gui_save.h
+    qt_gui/custom_dock_widget.h
+    qt_gui/custom_table_widget_item.cpp
+    qt_gui/custom_table_widget_item.h
+    qt_gui/game_list_item.h
+    qt_gui/game_list_table.cpp
+    qt_gui/game_list_table.h
+    qt_gui/game_info.h
     main.cpp
 )
 

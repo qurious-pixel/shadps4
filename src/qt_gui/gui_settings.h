@@ -1,4 +1,5 @@
 #pragma once
+
 #include <QColor>
 
 #include "settings.h"
