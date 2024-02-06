@@ -36,7 +36,7 @@ Follow the indentation/whitespace style shown below. Do not use tabs, use 4-spac
 // then, library includes
 #include <nihstro/shared_binary.h>
 
-// finally, yuzu includes
+// finally, shadps4 includes
 #include "common/math_util.h"
 #include "common/vector_math.h"
 
