@@ -9,6 +9,6 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent)
 qt_standard_project_setup()
 
 
-add_subdirectory(externals/cryptopp)
+add_subdirectory(externals/cryptopp-cmake)
 add_subdirectory(src)
 

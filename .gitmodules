@@ -1,4 +1,4 @@
-[submodule "externals/cryptopp"]
-	path = externals/cryptopp
+[submodule "externals/cryptopp-cmake"]
+	path = externals/cryptopp-cmake
 	url = https://github.com/shadps4-emu/ext-cryptopp-cmake.git
 	branch = master
