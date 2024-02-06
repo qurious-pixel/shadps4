@@ -58,21 +58,21 @@ struct PKGHeader {
 
     LE<u08> pkg_zeroes_2[0x280];
 
-    LE<u32> pkg_0x400;
+    BE<u32> pkg_0x400;
 
-    LE<u32> pfs_image_count;  // count of PFS images
-    LE<u64> pfs_image_flags;  // PFS flags
+    BE<u32> pfs_image_count;  // count of PFS images
+    BE<u64> pfs_image_flags;  // PFS flags
     BE<u64> pfs_image_offset; // offset to start of external PFS image
     BE<u64> pfs_image_size;   // size of external PFS image
-    LE<u64> mount_image_offset;
-    LE<u64> mount_image_size;
+    BE<u64> mount_image_offset;
+    BE<u64> mount_image_size;
     BE<u64> pkg_size;
-    LE<u32> pfs_signed_size;
-    LE<u32> pfs_cache_size;
+    BE<u32> pfs_signed_size;
+    BE<u32> pfs_cache_size;
     LE<u08> pfs_image_digest[0x20];
     LE<u08> pfs_signed_digest[0x20];
-    LE<u64> pfs_split_size_nth_0;
-    LE<u64> pfs_split_size_nth_1;
+    BE<u64> pfs_split_size_nth_0;
+    BE<u64> pfs_split_size_nth_1;
 
     LE<u08> pkg_zeroes_3[0xB50];
 
