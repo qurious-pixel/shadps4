@@ -19,10 +19,13 @@ qt_add_executable(shadps4
     qt_gui/game_list_grid_delegate.cpp
     qt_gui/game_list_grid_delegate.h
     qt_gui/qt_utils.h
+    common/common.h
     common/io_file.cpp
     common/io_file.h
     common/types.h
     common/endianness.h
+    emulator/file_format/psf.cpp
+    emulator/file_format/psf.h
     main.cpp
 )
 
