@@ -7,9 +7,9 @@
 #include "main_window.h"
 #include "ui_main_window.h"
 
-// #include "../emulator/Loader.h"
-// #include "../emulator/fileFormat/PKG.h"
-// #include "../core/FsFile.h"
+#include "../common/io_file.h"
+#include "../emulator/Loader.h"
+#include "../emulator/file_format/pkg.h"
 
 main_window::main_window(std::shared_ptr<gui_settings> gui_settings, QWidget* parent)
     : QMainWindow(parent), ui(new Ui::main_window), m_gui_settings(std::move(gui_settings)) {
@@ -233,34 +233,33 @@ void main_window::SaveWindowState() const {
 }
 
 void main_window::InstallPkg() {
-    /*TODO	std::string file(QFileDialog::getOpenFileName(this, tr("Install PKG File"),
-       QDir::currentPath(), tr("PKG File (*.PKG)")).toStdString()); if (detectFileType(file) ==
-       FILETYPE_PKG)
-        {
-            PKG pkg;
-            pkg.open(file);
-            //if pkg is ok we procced with extraction
-            std::string failreason;
-            QString gamedir = QDir::currentPath() + "/game/" +
-       QString::fromStdString(pkg.getTitleID()); QDir dir(gamedir); if (!dir.exists()) {
-                dir.mkpath(".");
-            }
-            std::string extractpath = QDir::currentPath().toStdString() + "/game/" +
-       pkg.getTitleID() + "/"; if (!pkg.extract(file, extractpath, failreason))
-            {
-                QMessageBox::critical(this, "PKG ERROR", QString::fromStdString(failreason),
-       QMessageBox::Ok, 0);
-            }
-            else
-            {
-                QMessageBox::information(this, "Extraction Finished", "Game successfully installed
-       at " + gamedir, QMessageBox::Ok, 0); m_game_list_frame->Refresh(true);
-            }
-
+    std::string file(QFileDialog::getOpenFileName(this, tr("Install PKG File"), QDir::currentPath(),
+                                                  tr("PKG File (*.PKG)"))
+                         .toStdString());
+    if (detectFileType(file) == FILETYPE_PKG) {
+        PKG pkg;
+        pkg.open(file);
+        // if pkg is ok we procced with extraction
+        std::string failreason;
+        QString gamedir = QDir::currentPath() + "/game/" + QString::fromStdString(pkg.getTitleID());
+        QDir dir(gamedir);
+        if (!dir.exists()) {
+            dir.mkpath(".");
         }
-        else
-        {
-            QMessageBox::critical(this, "PKG ERROR", "File doesn't appear to be a valid PKG file",
-       QMessageBox::Ok, 0);
-        }*/
+        std::string extractpath =
+            QDir::currentPath().toStdString() + "/game/" + pkg.getTitleID() + "/";
+        if (!pkg.extract(file, extractpath, failreason)) {
+            QMessageBox::critical(this, "PKG ERROR", QString::fromStdString(failreason),
+                                  QMessageBox::Ok, 0);
+        } else {
+            QMessageBox::information(this, "Extraction Finished",
+                                     "Game successfully installed at " + gamedir, QMessageBox::Ok,
+                                     0);
+            m_game_list_frame->Refresh(true);
+        }
+
+    } else {
+        QMessageBox::critical(this, "PKG ERROR", "File doesn't appear to be a valid PKG file",
+                              QMessageBox::Ok, 0);
+    }
 }

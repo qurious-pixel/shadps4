@@ -31,9 +31,14 @@ qt_add_executable(shadps4
     common/keys.h
     emulator/file_format/psf.cpp
     emulator/file_format/psf.h
+    emulator/file_format/pkg.cpp
+    emulator/file_format/pkg.h
+    emulator/file_format/pfs.h
+    emulator/loader.cpp
+    emulator/loader.h
     main.cpp
 )
-find_package(cryptopp)
+
 target_link_libraries(shadps4 PRIVATE Qt6::Widgets Qt6::Concurrent cryptopp::cryptopp)
 
 set_target_properties(shadps4 PROPERTIES
