@@ -6,8 +6,9 @@
 #include <osrng.h>
 #include <oaep.h>
 #include <filters.h>
-#include "../../Types.h"
 #include "Keys.h"
+#include "../../Types.h"
+
 
 using namespace CryptoPP;
 
@@ -36,7 +37,7 @@ public:
 		}
 	}
 
-	void xtsMult(CryptoPP::byte* &encryptedTweak)
+	void xtsMult(CryptoPP::byte*& encryptedTweak)
 	{
 		int feedback = 0;
 		for (int k = 0; k < 16; k++)
