@@ -18,6 +18,8 @@ qt_add_executable(shadps4
     qt_gui/game_list_grid.h
     qt_gui/game_list_grid_delegate.cpp
     qt_gui/game_list_grid_delegate.h
+    qt_gui/game_list_frame.cpp
+    qt_gui/game_list_frame.h
     qt_gui/qt_utils.h
     common/common.h
     common/io_file.cpp
@@ -29,7 +31,7 @@ qt_add_executable(shadps4
     main.cpp
 )
 
-target_link_libraries(shadps4 PRIVATE Qt6::Widgets)
+target_link_libraries(shadps4 PRIVATE Qt6::Widgets Qt6::Concurrent)
 
 set_target_properties(shadps4 PROPERTIES
     WIN32_EXECUTABLE ON

@@ -1,10 +1,12 @@
-// #include "game_list_frame.h"
+#include <QDir>
+#include <QFileDialog>
+#include <QMessageBox>
+
+#include "game_list_frame.h"
 #include "gui_settings.h"
 #include "main_window.h"
 #include "ui_main_window.h"
-// #include <QFileDialog>
-// #include <QDir>
-// #include <QMessageBox>
+
 // #include "../emulator/Loader.h"
 // #include "../emulator/fileFormat/PKG.h"
 // #include "../core/FsFile.h"
@@ -41,7 +43,7 @@ bool main_window::Init() {
 
     // Fix possible hidden game list columns. The game list has to be visible already. Use this
     // after show()
-    // TODO	m_game_list_frame->FixNarrowColumns();
+    m_game_list_frame->FixNarrowColumns();
 
     return true;
 }
@@ -64,34 +66,31 @@ void main_window::CreateDockWindows() {
     m_main_window = new QMainWindow();
     m_main_window->setContextMenuPolicy(Qt::PreventContextMenu);
 
-    /*TODO	m_game_list_frame = new game_list_frame(m_gui_settings, m_main_window);
-        m_game_list_frame->setObjectName("gamelist");
+    m_game_list_frame = new game_list_frame(m_gui_settings, m_main_window);
+    m_game_list_frame->setObjectName("gamelist");
 
-        m_main_window->addDockWidget(Qt::LeftDockWidgetArea, m_game_list_frame);
+    m_main_window->addDockWidget(Qt::LeftDockWidgetArea, m_game_list_frame);
 
-        m_main_window->setDockNestingEnabled(true);
+    m_main_window->setDockNestingEnabled(true);
 
-        setCentralWidget(m_main_window);
+    setCentralWidget(m_main_window);
 
-        connect(m_game_list_frame, &game_list_frame::GameListFrameClosed, this, [this]()
-        {
-            if (ui->showGameListAct->isChecked())
-            {
-                ui->showGameListAct->setChecked(false);
-                    m_gui_settings->SetValue(gui::main_window_gamelist_visible, false);
-            }
-        });*/
+    connect(m_game_list_frame, &game_list_frame::GameListFrameClosed, this, [this]() {
+        if (ui->showGameListAct->isChecked()) {
+            ui->showGameListAct->setChecked(false);
+            m_gui_settings->SetValue(gui::main_window_gamelist_visible, false);
+        }
+    });
 }
 void main_window::CreateConnects() {
     connect(ui->exitAct, &QAction::triggered, this, &QWidget::close);
 
     connect(ui->showGameListAct, &QAction::triggered, this, [this](bool checked) {
-        // TODO		checked ? m_game_list_frame->show() : m_game_list_frame->hide();
+        checked ? m_game_list_frame->show() : m_game_list_frame->hide();
         m_gui_settings->SetValue(gui::main_window_gamelist_visible, checked);
     });
-    connect(ui->refreshGameListAct, &QAction::triggered, this, [this] {
-        // TODO		m_game_list_frame->Refresh(true);
-    });
+    connect(ui->refreshGameListAct, &QAction::triggered, this,
+            [this] { m_game_list_frame->Refresh(true); });
 
     connect(m_icon_size_act_group, &QActionGroup::triggered, this, [this](QAction* act) {
         static const int index_small = gui::get_Index(gui::game_list_icon_size_small);
@@ -111,46 +110,45 @@ void main_window::CreateConnects() {
         m_save_slider_pos = true;
         ResizeIcons(index);
     });
-    /*TODO	connect(m_game_list_frame, &game_list_frame::RequestIconSizeChange, this, [this](const
-       int& val)
-        {
-            const int idx = ui->sizeSlider->value() + val;
-            m_save_slider_pos = true;
-            ResizeIcons(idx);
-        });
+    connect(m_game_list_frame, &game_list_frame::RequestIconSizeChange, this,
+            [this](const int& val) {
+                const int idx = ui->sizeSlider->value() + val;
+                m_save_slider_pos = true;
+                ResizeIcons(idx);
+            });
 
-        connect(m_list_mode_act_group, &QActionGroup::triggered, this, [this](QAction* act)
-        {
-            const bool is_list_act = act == ui->setlistModeListAct;
-            if (is_list_act == m_is_list_mode)
-                return;
+    connect(m_list_mode_act_group, &QActionGroup::triggered, this, [this](QAction* act) {
+        const bool is_list_act = act == ui->setlistModeListAct;
+        if (is_list_act == m_is_list_mode)
+            return;
 
-            const int slider_pos = ui->sizeSlider->sliderPosition();
-            ui->sizeSlider->setSliderPosition(m_other_slider_pos);
-            SetIconSizeActions(m_other_slider_pos);
-            m_other_slider_pos = slider_pos;
+        const int slider_pos = ui->sizeSlider->sliderPosition();
+        ui->sizeSlider->setSliderPosition(m_other_slider_pos);
+        SetIconSizeActions(m_other_slider_pos);
+        m_other_slider_pos = slider_pos;
 
-            m_is_list_mode = is_list_act;
-            m_game_list_frame->SetListMode(m_is_list_mode);
-        });
-        connect(ui->sizeSlider, &QSlider::valueChanged, this, &main_window::ResizeIcons);
-        connect(ui->sizeSlider, &QSlider::sliderReleased, this, [this]
-        {
-            const int index = ui->sizeSlider->value();
-            m_gui_settings->SetValue(m_is_list_mode ? gui::game_list_iconSize :
-       gui::game_list_iconSizeGrid, index); SetIconSizeActions(index);
-        });
-        connect(ui->sizeSlider, &QSlider::actionTriggered, this, [this](int action)
-        {
-            if (action != QAbstractSlider::SliderNoAction && action != QAbstractSlider::SliderMove)
-            {	// we only want to save on mouseclicks or slider release (the other connect handles
-       this) m_save_slider_pos = true; // actionTriggered happens before the value was changed
-            }
-        });
+        m_is_list_mode = is_list_act;
+        m_game_list_frame->SetListMode(m_is_list_mode);
+    });
+    connect(ui->sizeSlider, &QSlider::valueChanged, this, &main_window::ResizeIcons);
+    connect(ui->sizeSlider, &QSlider::sliderReleased, this, [this] {
+        const int index = ui->sizeSlider->value();
+        m_gui_settings->SetValue(
+            m_is_list_mode ? gui::game_list_iconSize : gui::game_list_iconSizeGrid, index);
+        SetIconSizeActions(index);
+    });
+    connect(ui->sizeSlider, &QSlider::actionTriggered, this, [this](int action) {
+        if (action != QAbstractSlider::SliderNoAction &&
+            action !=
+                QAbstractSlider::SliderMove) { // we only want to save on mouseclicks or slider
+                                               // release (the other connect handles this)
+            m_save_slider_pos = true; // actionTriggered happens before the value was changed
+        }
+    });
 
-        connect(ui->mw_searchbar, &QLineEdit::textChanged, m_game_list_frame,
-       &game_list_frame::SetSearchText); connect(ui->bootInstallPkgAct, &QAction::triggered, this,
-       [this] {InstallPkg(); });*/
+    connect(ui->mw_searchbar, &QLineEdit::textChanged, m_game_list_frame,
+            &game_list_frame::SetSearchText);
+    connect(ui->bootInstallPkgAct, &QAction::triggered, this, [this] { InstallPkg(); });
 }
 
 void main_window::SetIconSizeActions(int idx) const {
@@ -186,37 +184,42 @@ void main_window::ResizeIcons(int index) {
         SetIconSizeActions(index);
     }
 
-    // TODO	m_game_list_frame->ResizeIcons(index);
+    m_game_list_frame->ResizeIcons(index);
 }
 void main_window::ConfigureGuiFromSettings() {
     // Restore GUI state if needed. We need to if they exist.
-    /*TODO	if (!restoreGeometry(m_gui_settings->GetValue(gui::main_window_geometry).toByteArray()))
-        {
-            resize(QGuiApplication::primaryScreen()->availableSize() * 0.7);
-        }
+    if (!restoreGeometry(m_gui_settings->GetValue(gui::main_window_geometry).toByteArray())) {
+        resize(QGuiApplication::primaryScreen()->availableSize() * 0.7);
+    }
 
-        restoreState(m_gui_settings->GetValue(gui::main_window_windowState).toByteArray());
-        m_main_window->restoreState(m_gui_settings->GetValue(gui::main_window_mwState).toByteArray());
+    restoreState(m_gui_settings->GetValue(gui::main_window_windowState).toByteArray());
+    m_main_window->restoreState(m_gui_settings->GetValue(gui::main_window_mwState).toByteArray());
 
-        ui->showGameListAct->setChecked(m_gui_settings->GetValue(gui::main_window_gamelist_visible).toBool());
+    ui->showGameListAct->setChecked(
+        m_gui_settings->GetValue(gui::main_window_gamelist_visible).toBool());
 
-        m_game_list_frame->setVisible(ui->showGameListAct->isChecked());
+    m_game_list_frame->setVisible(ui->showGameListAct->isChecked());
 
-        // handle icon size options
-        m_is_list_mode = m_gui_settings->GetValue(gui::game_list_listMode).toBool();
-        if (m_is_list_mode)
-            ui->setlistModeListAct->setChecked(true);
-        else
-            ui->setlistModeGridAct->setChecked(true);
+    // handle icon size options
+    m_is_list_mode = m_gui_settings->GetValue(gui::game_list_listMode).toBool();
+    if (m_is_list_mode)
+        ui->setlistModeListAct->setChecked(true);
+    else
+        ui->setlistModeGridAct->setChecked(true);
 
-        const int icon_size_index = m_gui_settings->GetValue(m_is_list_mode ?
-       gui::game_list_iconSize : gui::game_list_iconSizeGrid).toInt(); m_other_slider_pos =
-       m_gui_settings->GetValue(!m_is_list_mode ? gui::game_list_iconSize :
-       gui::game_list_iconSizeGrid).toInt(); ui->sizeSlider->setSliderPosition(icon_size_index);
-        SetIconSizeActions(icon_size_index);
+    const int icon_size_index =
+        m_gui_settings
+            ->GetValue(m_is_list_mode ? gui::game_list_iconSize : gui::game_list_iconSizeGrid)
+            .toInt();
+    m_other_slider_pos =
+        m_gui_settings
+            ->GetValue(!m_is_list_mode ? gui::game_list_iconSize : gui::game_list_iconSizeGrid)
+            .toInt();
+    ui->sizeSlider->setSliderPosition(icon_size_index);
+    SetIconSizeActions(icon_size_index);
 
-        // Gamelist
-        m_game_list_frame->LoadSettings();*/
+    // Gamelist
+    m_game_list_frame->LoadSettings();
 }
 
 void main_window::SaveWindowState() const {
@@ -226,7 +229,7 @@ void main_window::SaveWindowState() const {
     m_gui_settings->SetValue(gui::main_window_mwState, m_main_window->saveState());
 
     // Save column settings
-    // TODO	m_game_list_frame->SaveSettings();
+    m_game_list_frame->SaveSettings();
 }
 
 void main_window::InstallPkg() {
