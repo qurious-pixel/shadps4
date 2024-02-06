@@ -10,9 +10,9 @@
 struct PSFHeader {
     BE<u32> magic; // big endian
     LE<u32> version;
-    LE<u32> keyTableOffset;
-    LE<u32> dataTableOffset;
-    LE<u32> indexTableEntries;
+    LE<u32> key_table_offset;
+    LE<u32> data_table_offset;
+    LE<u32> index_table_entries;
 };
 
 struct PSFEntry {
@@ -22,11 +22,11 @@ struct PSFEntry {
         INTEGER = 0x0404,     // Unsigned 32-bit integer
     };
 
-    LE<u16> keyOffset;
+    LE<u16> key_offset;
     BE<u16> param_fmt; // big endian
-    LE<u32> paramLen;
-    LE<u32> paramMaxLen;
-    LE<u32> dataOffset;
+    LE<u32> param_len;
+    LE<u32> param_max_len;
+    LE<u32> data_offset;
 };
 
 class PSF {

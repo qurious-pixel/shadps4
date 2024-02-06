@@ -20,32 +20,19 @@ bool PSF::open(const std::string& filepath) {
 
     // Parse file contents
     const auto& header = (PSFHeader&)psf[0];
-    for (u32 i = 0; i < header.indexTableEntries; i++) {
+    for (u32 i = 0; i < header.index_table_entries; i++) {
         const u32 offset = sizeof(PSFHeader) + i * sizeof(PSFEntry);
         auto& entry = (PSFEntry&)psf[offset];
 
-        std::string key = (char*)&psf[header.keyTableOffset + entry.keyOffset];
+        std::string key = (char*)&psf[header.key_table_offset + entry.key_offset];
         if (entry.param_fmt == PSFEntry::Fmt::TEXT_RAW ||
             entry.param_fmt == PSFEntry::Fmt::TEXT_NORMAL) {
-            map_strings[key] = (char*)&psf[header.dataTableOffset + entry.dataOffset];
+            map_strings[key] = (char*)&psf[header.data_table_offset + entry.data_offset];
         }
         if (entry.param_fmt == PSFEntry::Fmt::INTEGER) {
-            map_integers[key] = (u32&)psf[header.dataTableOffset + entry.dataOffset];
+            map_integers[key] = (u32&)psf[header.data_table_offset + entry.data_offset];
         }
     }
-    // debug code print all keys
-    std::ofstream out;
-    out.open("psf.txt", std::fstream::out | std::fstream::app);
-    out << "---------------------------------------------"
-        << "\n";
-    for (auto stringkey : map_strings) {
-        out << " " << stringkey.first << " : " << stringkey.second << "\n";
-    }
-    for (auto integerkey : map_integers) {
-        out << " " << integerkey.first << " : " << integerkey.second << "\n";
-    }
-    out << "---------------------------------------------"
-        << "\n";
 
     return true;
 }
