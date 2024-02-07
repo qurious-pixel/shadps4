@@ -1,2 +1,3 @@
 set(CRYPTOPP_BUILD_TESTING OFF)
+set(CRYPTOPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cryptopp/)
 add_subdirectory(cryptopp-cmake EXCLUDE_FROM_ALL)
