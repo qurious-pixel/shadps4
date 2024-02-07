@@ -1,0 +1,2 @@
+set(CRYPTOPP_BUILD_TESTING OFF)
+add_subdirectory(cryptopp-cmake EXCLUDE_FROM_ALL)
