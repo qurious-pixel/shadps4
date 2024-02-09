@@ -1,6 +1,6 @@
 #include <direct.h>
 #include "../../common/io_file.h"
-#include "PKG.h"
+#include "pkg.h"
 
 PKG::PKG() {}
 
