@@ -39,7 +39,11 @@ qt_add_executable(shadps4
     main.cpp
 )
 
-target_link_libraries(shadps4 PRIVATE Qt6::Widgets Qt6::Concurrent cryptopp::cryptopp)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND MSVC) #ugly probably make it better :D
+    target_link_libraries(shadps4 PRIVATE Qt6::Widgets Qt6::Concurrent cryptoppwin)
+else()
+    target_link_libraries(shadps4 PRIVATE Qt6::Widgets Qt6::Concurrent cryptopp::cryptopp)
+endif()
 
 set_target_properties(shadps4 PROPERTIES
     WIN32_EXECUTABLE ON
