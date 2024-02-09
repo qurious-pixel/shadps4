@@ -1,6 +1,6 @@
 #include "../common/io_file.h"
 #include "../common/types.h"
-#include "Loader.h"
+#include "loader.h"
 
 FileTypes detectFileType(const std::string& filepath) {
     if (filepath.size() == 0) // no file loaded
