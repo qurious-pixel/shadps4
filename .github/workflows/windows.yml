@@ -42,3 +42,14 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
+    - name: Deploy
+      run: |
+        mkdir upload
+        move build/Release/shadps4.exe upload
+        windeployqt --dir upload upload/shadps4.exe
+
+    - name: Upload executable
+      uses: actions/upload-artifact@v2
+      with:
+        name: shadps4-win64
+        path: upload
