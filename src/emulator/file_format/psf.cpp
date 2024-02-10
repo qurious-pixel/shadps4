@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "../../common/io_file.h"
-#include "PSF.h"
+#include "psf.h"
 
 PSF::PSF() {}
 
