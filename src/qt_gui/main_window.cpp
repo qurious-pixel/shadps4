@@ -1,6 +1,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QProgressDialog>
 
 #include "game_list_frame.h"
 #include "gui_settings.h"
@@ -252,6 +253,34 @@ void main_window::InstallPkg() {
             QMessageBox::critical(this, "PKG ERROR", QString::fromStdString(failreason),
                                   QMessageBox::Ok, 0);
         } else {
+            int nfiles = pkg.getNumberOfFiles();
+
+            QList<int> indices;
+            for (int i = 0; i < nfiles; i++) {
+                indices.append(i);
+            }
+
+            QProgressDialog dialog;
+            dialog.setWindowTitle("PKG Extraction");
+            dialog.setLabelText("Extracting PKG please wait");
+
+            // Create a QFutureWatcher and connect signals and slots.
+            QFutureWatcher<void> futureWatcher;
+            QObject::connect(&futureWatcher, SIGNAL(finished()), &dialog, SLOT(reset()));
+            QObject::connect(&dialog, SIGNAL(canceled()), &futureWatcher, SLOT(cancel()));
+            QObject::connect(&futureWatcher, SIGNAL(progressRangeChanged(int, int)), &dialog,
+                             SLOT(setRange(int, int)));
+            QObject::connect(&futureWatcher, SIGNAL(progressValueChanged(int)), &dialog,
+                             SLOT(setValue(int)));
+
+            futureWatcher.setFuture(QtConcurrent::map(
+                indices, std::bind(&PKG::extractFiles, pkg, std::placeholders::_1)));
+
+            // Display the dialog and start the event loop.
+            dialog.exec();
+
+            futureWatcher.waitForFinished();
+
             QMessageBox::information(this, "Extraction Finished",
                                      "Game successfully installed at " + gamedir, QMessageBox::Ok,
                                      0);

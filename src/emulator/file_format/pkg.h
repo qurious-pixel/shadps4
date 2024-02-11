@@ -12,11 +12,11 @@
 #include <QMap>
 #include <QString>
 #include <QtZlib/zlib.h>
-#include <qapplication.h>
 
 #include "../../common/common.h" //TODO fix me!
 #include "../../common/crypto.h" //TODO fix me!
-#include "../../common/types.h"  //TODO fix me!
+#include "../../common/types.h" //TODO fix me!
+#include "../../common/io_file.h"
 #include "pfs.h"
 
 struct PKGHeader {
@@ -105,29 +105,43 @@ inline void concatenate(CryptoPP::byte* a, CryptoPP::byte* b, CryptoPP::byte* ds
     std::memcpy(dst + size1, b, size2);
 }
 
-struct Crypto_Keys {
-    CryptoPP::byte* dk3_ = nullptr;
-    CryptoPP::byte* ivkey = nullptr;
-    CryptoPP::byte* imgkey = nullptr;
-    CryptoPP::byte* ekpfs_key = nullptr;
-
-    CryptoPP::byte* data_tweak_key = nullptr;
-    CryptoPP::byte* dataKey = nullptr;
-    CryptoPP::byte* tweakKey = nullptr;
-};
-
 class PKG {
 private:
     u08* pkg;
     u64 pkgSize = 0;
     char pkgTitleID[9];
     std::string extractPath;
+    PKGHeader pkgheader;
+
+    std::unordered_map<int, std::string> folderMap;
+    std::unordered_map<int, QString> extractMap;
+    QVector<pfs_fs_table> fsTable;
+    QVector<Inode> iNodeBuf;
+    u64* sectorMap;
+    u64 pfscPos;
+
+    CryptoPP::byte* dk3_;
+    CryptoPP::byte* ivKey;
+    CryptoPP::byte* imgKey;
+    CryptoPP::byte* ekpfsKey;
+    CryptoPP::byte* dataTweakKey;
+    CryptoPP::byte* dataKey;
+    CryptoPP::byte* tweakKey;
+
+    std::string pkgpath;
+    QString currentDir;
+    QString parentDir;
+    QString extract_path;
+    QString game_dir_;
+    QDir gameDir;
 
 public:
     Crypto crypto;
     PKG();
     ~PKG();
     bool open(const std::string& filepath);
+    void extractFiles(const int& index);
+    u32 getNumberOfFiles();
     u64 getPkgSize() {
         return pkgSize;
     }
