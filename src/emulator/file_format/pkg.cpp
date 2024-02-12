@@ -137,23 +137,14 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
 
     delete[] seed;
 
-    int length = 0; // find a better way to do this.
-
-    if (file.size().value() < 0x1200000) {
-        length = pkgheader.pfs_image_size;
-    }
-
-    else {
-        length = 0x1200000;
-    }
+    int length = pkgheader.pfs_cache_size * 0x2; // Seems to be ok.
 
     u08* pfs_copy = (u08*)mmap(length, file.getHandle(), pkgheader.pfs_image_offset);
 
     u08* pfs_decrypted = new u08[length];
     // std::memcpy(pfs_decrypted, pfs_copy, 0x10000);  // copy the first 16 blocks "as is", they
     // will retain the pfs header. Not Encrypted.
-    // pfs_decrypted[0x1C] = pfs_copy[0x1C] & ~4;	    // remove the "encrypted" flag, no need to
-    // do this but ok.
+    // pfs_decrypted[0x1C] = pfs_copy[0x1C] & ~4;	    // remove the "encrypted" flag.
 
     PKG::crypto.decryptPFS(dataKey, tweakKey, pfs_copy, pfs_decrypted, length,
                            0); // Decrypt the pfs_image.
