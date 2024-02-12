@@ -26,18 +26,29 @@ static void DecompressPFSC(std::span<const char> compressed_data, std::span<char
     }
 }
 
+u32 GetPFSCOffset(std::span<const u8> pfs_image) {
+    static constexpr u32 PfscMagic = 0x43534650;
+    u32 value;
+    for (u32 i = 0x20000; i < pfs_image.size(); i += 0x10000) {
+        std::memcpy(&value, &pfs_image[i], sizeof(u32));
+        if (value == PfscMagic)
+            return i;
+    }
+    return -1;
+}
+
 PKG::PKG() = default;
 
 PKG::~PKG() = default;
 
-bool PKG::open(const std::string& filepath) {
-    IOFile file;
-    if (!file.open(filepath)) {
+bool PKG::Open(const std::string& filepath) {
+    IOFile file(filepath);
+    if (!file.isOpen()) {
         return false;
     }
     pkgSize = file.size().value();
+
     PKGHeader pkgheader;
-    // We have already checked magic should be ok
     file.readBytes(&pkgheader, sizeof(PKGHeader));
 
     // Find title id it is part of pkg_content_id starting at offset 0x40
@@ -49,9 +60,8 @@ bool PKG::open(const std::string& filepath) {
     return true;
 }
 
-bool PKG::extract(const std::string& filepath, const std::string& extractPath,
-                  std::string& failreason) {
-    this->extractPath = extractPath;
+bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extract, std::string& failreason) {
+    extract_path = extract;
     pkgpath = filepath;
     IOFile file(filepath);
     if (!file.isOpen()) {
@@ -92,17 +102,14 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
         const auto name = GetEntryNameByType(entry.id);
         if (name.empty()) {
             // Just print with id
-            IOFile out(extractPath + "/sce_sys/" + std::to_string(entry.id), "wb");
+            IOFile out(extract_path / "sce_sys" / std::to_string(entry.id), "wb");
             out.writeBytes(pkg.data() + entry.offset, entry.size);
             out.close();
             continue;
         }
 
-        QString filepath = QString::fromStdString(extractPath + "/sce_sys/" + std::string{name});
-        QDir dir = QFileInfo(filepath).dir();
-        if (!dir.exists()) {
-            dir.mkpath(dir.path());
-        }
+        const auto filepath = extract_path / "sce_sys" / name;
+        std::filesystem::create_directories(filepath.parent_path());
 
         if (entry.id == 0x1) {         // DIGESTS, seek;
                                        // file.Seek(entry.offset, fsSeekSet);
@@ -138,7 +145,7 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
             // file.Seek(entry.offset, fsSeekSet);
         }
 
-        IOFile out(extractPath + "/sce_sys/" + std::string{name}, "wb");
+        IOFile out(extract_path / "sce_sys" / name, "wb");
         out.writeBytes(pkg.data() + entry.offset, entry.size);
         out.close();
     }
@@ -161,26 +168,29 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
     std::vector<u8> pfs_decrypted(length);
     PKG::crypto.decryptPFS(dataKey, tweakKey, pfs_encrypted, pfs_decrypted, 0);
 
-    pfscPos = get_pfsc_pos(pfs_decrypted);
+    // Retrieve PFSC from decrypted pfs_image.
+    pfsc_offset = GetPFSCOffset(pfs_decrypted);
     std::vector<u8> pfsc(length);
-    std::memcpy(pfsc.data(), pfs_decrypted.data() + pfscPos, length - pfscPos);
+    std::memcpy(pfsc.data(), pfs_decrypted.data() + pfsc_offset, length - pfsc_offset);
 
     PFSCHdr pfsChdr;
     std::memcpy(&pfsChdr, pfsc.data(), sizeof(pfsChdr));
 
-    const int num_blocks = (int)(pfsChdr.DataLength / pfsChdr.BlockSz2);
+    const int num_blocks = (int)(pfsChdr.data_length / pfsChdr.block_sz2);
     sectorMap.resize(num_blocks + 1); // 8 bytes, need extra 1 to get the last offset.
 
     for (int i = 0; i < num_blocks + 1; i++) {
-        std::memcpy(&sectorMap[i], pfsc.data() + pfsChdr.BlockOffsets + i * 8, 8);
+        std::memcpy(&sectorMap[i], pfsc.data() + pfsChdr.block_offsets + i * 8, 8);
     }
 
-    int ent_size = 0;
-    int ndinode = 0;
-    int dinodePos = 0;
+    u32 ent_size = 0;
+    u32 ndinode = 0;
+    u32 dinodePos = 0;
+
+    std::vector<char> compressedData;
+    std::vector<char> decompressedData(0x10000);
 
     // Get iNdoes.
-    decompressedData.resize(0x10000);
     for (int i = 0; i < num_blocks; i++) {
         const u64 sectorOffset = sectorMap[i];
         const u64 sectorSize = sectorMap[i + 1] - sectorOffset;
@@ -204,12 +214,12 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
 
         if (i >= 1 && i <= occupied_blocks) { // Get all iNodes, gives type, file size and location.
             for (int p = 0; p < 0x10000; p += 0xA8) {
-                Inode tmp = (Inode&)decompressedData[p];
-
-                if (tmp.Mode == 0)
+                Inode node;
+                std::memcpy(&node, &decompressedData[p], sizeof(node));
+                if (node.Mode == 0) {
                     break;
-
-                iNodeBuf.push_back((Inode&)decompressedData[p]);
+                }
+                iNodeBuf.push_back(node);
             }
         }
 
@@ -245,14 +255,13 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
 
             ent_size = dirent.entsize;
 
-            pfs_fs_table tmp;
-            tmp.name = std::string(dirent.name, dirent.namelen);
-            tmp.inode = dirent.ino;
-            tmp.type = dirent.type;
-            fsTable.push_back(tmp);
+            auto& table = fsTable.emplace_back();
+            table.name = std::string(dirent.name, dirent.namelen);
+            table.inode = dirent.ino;
+            table.type = dirent.type;
 
-            if (tmp.type == PFS_DIR) {
-                folderMap[tmp.inode] = tmp.name;
+            if (table.type == PFS_DIR) {
+                folderMap[table.inode] = table.name;
             }
         }
 
@@ -264,43 +273,27 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
     }
 
     // Create Folders.
-    folderMap[2] = PKG::getTitleID(); // set up game path instead of calling it uroot
-    game_dir_ = QDir::currentPath() + "/game/";
-    gameDir = QDir(game_dir_ + QString(folderMap[2].c_str()));
-    extract_path = gameDir.absolutePath();
+    folderMap[2] = GetTitleID(); // Set up game path instead of calling it uroot
+    game_dir = std::filesystem::current_path() / "game";
+    title_dir = game_dir / GetTitleID();
 
-    PKG::createDirectory(
-        game_dir_ +
-        (folderMap[2].c_str())); // game dir already created but ok let's leave it for now.
+    // Game dir already created but ok let's leave it for now.
+    std::filesystem::create_directories(title_dir);
 
     for (int i = 0; i < fsTable.size(); i++) {
-        int inode_number = fsTable[i].inode;
-        int inode_type = fsTable[i].type;
-        std::string inode_name = fsTable[i].name;
+        const u32 inode_number = fsTable[i].inode;
+        const u32 inode_type = fsTable[i].type;
+        const auto inode_name = fsTable[i].name;
 
         if (inode_type == PFS_CURRENT_DIR) {
-            currentDir = folderMap[inode_number].c_str();
+            current_dir = folderMap[inode_number];
         } else if (inode_type == PFS_PARENT_DIR) {
-            parentDir = folderMap[inode_number].c_str();
-
-            if (i > 1) { // Skip uroot folder. we create our own game uid folder
-                QString par_dir;
-
-                if (inode_number == 2) // Check the parent dir first.
-                    par_dir = PKG::findDirectory(QDir(game_dir_), parentDir);
-                else
-                    par_dir = PKG::findDirectory(gameDir, parentDir);
-
-                // Use the checked parent Dir path to check for children dir and avoid using the
-                // game folder as a point of search.
-                QString cur_dir = PKG::findDirectory(QDir(par_dir), currentDir);
-
-                if (cur_dir == "") {
-                    extract_path = par_dir + QString("/") + (currentDir);
-                    createDirectory(extract_path);
-                } else {
-                    extract_path = cur_dir;
-                }
+            parent_dir = folderMap[inode_number];
+            // Skip uroot folder. we create our own game uid folder
+            if (i > 1) {
+                const auto base_dir = inode_number == 2 ? game_dir : title_dir;
+                extract_path = base_dir / parent_dir / current_dir;
+                std::filesystem::create_directories(extract_path);
             }
         }
         extractMap[inode_number] = extract_path;
@@ -308,9 +301,7 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
     return true;
 }
 
-// Decrypt and Extract pfs_image content.
-void PKG::extractFiles(const int& index) {
-
+void PKG::ExtractFiles(const int& index) {
     int inode_number = fsTable[index].inode;
     int inode_type = fsTable[index].type;
     std::string inode_name = fsTable[index].name;
@@ -319,12 +310,14 @@ void PKG::extractFiles(const int& index) {
         int sector_loc = iNodeBuf[inode_number].loc;
         int nblocks = iNodeBuf[inode_number].Blocks;
         int bsize = iNodeBuf[inode_number].Size;
-        std::string file_extracted = extractMap[inode_number].toStdString() + "/" + inode_name;
+        std::string file_extracted = extractMap[inode_number] + "/" + inode_name;
 
         IOFile inflated;
         inflated.open(file_extracted, "wb");
 
         int size_decompressed = 0;
+        std::vector<char> compressedData;
+        std::vector<char> decompressedData(0x10000);
 
         u64 pfsc_buf_size = 0x11000; // extra 0x1000
         std::vector<u8> pfsc(pfsc_buf_size);
@@ -335,12 +328,12 @@ void PKG::extractFiles(const int& index) {
                 sectorMap[sector_loc + j]; // offset into PFSC_image and not pfs_image.
             u64 sectorSize = sectorMap[sector_loc + j + 1] -
                              sectorOffset; // indicates if data is compressed or not.
-            u64 fileOffset = (pkgheader.pfs_image_offset + pfscPos + sectorOffset);
+            u64 fileOffset = (pkgheader.pfs_image_offset + pfsc_offset + sectorOffset);
             u64 currentSector1 =
-                (pfscPos + sectorOffset) / 0x1000; // block size is 0x1000 for xts decryption.
+                (pfsc_offset + sectorOffset) / 0x1000; // block size is 0x1000 for xts decryption.
 
-            int sectorOffsetMask = (sectorOffset + pfscPos) & 0xFFFFF000;
-            int previousData = (sectorOffset + pfscPos) - sectorOffsetMask;
+            int sectorOffsetMask = (sectorOffset + pfsc_offset) & 0xFFFFF000;
+            int previousData = (sectorOffset + pfsc_offset) - sectorOffsetMask;
 
             IOFile file; // Open the file for each iteration to avoid conflict.
             if (!file.open(pkgpath)) {
@@ -377,6 +370,3 @@ void PKG::extractFiles(const int& index) {
     }
 }
 
-u32 PKG::getNumberOfFiles() {
-    return fsTable.size();
-}

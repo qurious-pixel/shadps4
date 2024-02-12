@@ -239,21 +239,14 @@ void main_window::InstallPkg() {
                          .toStdString());
     if (detectFileType(file) == FILETYPE_PKG) {
         PKG pkg;
-        pkg.open(file);
-        // if pkg is ok we procced with extraction
+        pkg.Open(file);
         std::string failreason;
-        QString gamedir = QDir::currentPath() + "/game/" + QString::fromStdString(pkg.getTitleID());
-        QDir dir(gamedir);
-        if (!dir.exists()) {
-            dir.mkpath(".");
-        }
-        std::string extractpath =
-            QDir::currentPath().toStdString() + "/game/" + pkg.getTitleID() + "/";
-        if (!pkg.extract(file, extractpath, failreason)) {
+        const auto extract_path = std::filesystem::current_path() / "game" / pkg.GetTitleID();
+        if (!pkg.Extract(file, extract_path, failreason)) {
             QMessageBox::critical(this, "PKG ERROR", QString::fromStdString(failreason),
                                   QMessageBox::Ok, 0);
         } else {
-            int nfiles = pkg.getNumberOfFiles();
+            int nfiles = pkg.GetNumberOfFiles();
 
             QList<int> indices;
             for (int i = 0; i < nfiles; i++) {
@@ -274,15 +267,15 @@ void main_window::InstallPkg() {
                              SLOT(setValue(int)));
 
             futureWatcher.setFuture(QtConcurrent::map(
-                indices, std::bind(&PKG::extractFiles, pkg, std::placeholders::_1)));
+                indices, std::bind(&PKG::ExtractFiles, pkg, std::placeholders::_1)));
 
             // Display the dialog and start the event loop.
             dialog.exec();
-
             futureWatcher.waitForFinished();
 
+            auto path = QString::fromStdString(extract_path.string());
             QMessageBox::information(this, "Extraction Finished",
-                                     "Game successfully installed at " + gamedir, QMessageBox::Ok,
+                                     "Game successfully installed at " + path, QMessageBox::Ok,
                                      0);
             m_game_list_frame->Refresh(true);
         }

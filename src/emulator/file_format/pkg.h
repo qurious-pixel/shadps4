@@ -5,12 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include <cstdio>
-
-#include <QDir>
-#include <QDirIterator>
-#include <QMap>
-#include <QString>
-
+#include <filesystem>
 #include "common/endian.h"
 #include "common/crypto.h"
 #include "pfs.h"
@@ -88,21 +83,39 @@ struct PKGEntry {
 static_assert(sizeof(PKGEntry) == 32);
 
 class PKG {
+public:
+    PKG();
+    ~PKG();
+
+    bool Open(const std::string& filepath);
+    void ExtractFiles(const int& index);
+    bool Extract(const std::string& filepath, const std::filesystem::path& extract, std::string& failreason);
+
+    u32 GetNumberOfFiles() {
+        return fsTable.size();
+    }
+
+    u64 GetPkgSize() {
+        return pkgSize;
+    }
+
+    std::string_view GetTitleID() {
+        return std::string_view(pkgTitleID, 9);
+    }
+
 private:
+    Crypto crypto;
     std::vector<u8> pkg;
     u64 pkgSize = 0;
     char pkgTitleID[9];
-    std::string extractPath;
     PKGHeader pkgheader;
-    std::vector<char> compressedData;
-    std::vector<char> decompressedData;
 
     std::unordered_map<int, std::string> folderMap;
-    std::unordered_map<int, QString> extractMap;
-    QVector<pfs_fs_table> fsTable;
-    QVector<Inode> iNodeBuf;
+    std::unordered_map<int, std::string> extractMap;
+    std::vector<pfs_fs_table> fsTable;
+    std::vector<Inode> iNodeBuf;
     std::vector<u64> sectorMap;
-    u64 pfscPos;
+    u64 pfsc_offset;
 
     std::array<CryptoPP::byte, 32> dk3_;
     std::array<CryptoPP::byte, 32> ivKey;
@@ -111,72 +124,10 @@ private:
     std::array<CryptoPP::byte, 16> dataKey;
     std::array<CryptoPP::byte, 16> tweakKey;
 
-    std::string pkgpath;
-    QString currentDir;
-    QString parentDir;
-    QString extract_path;
-    QString game_dir_;
-    QDir gameDir;
-
-public:
-    Crypto crypto;
-    PKG();
-    ~PKG();
-    bool open(const std::string& filepath);
-    void extractFiles(const int& index);
-    u32 getNumberOfFiles();
-    u64 getPkgSize() {
-        return pkgSize;
-    }
-    std::string getTitleID() {
-        return std::string(pkgTitleID, 9);
-    }
-    bool extract(const std::string& filepath, const std::string& extractPath,
-                 std::string& failreason);
-
-    int get_pfsc_pos(std::span<const u8> pfs_image) {
-        s32 magic = 0x43534650; // PFSC.
-        int value;
-
-        for (int i = 0x20000; i < pfs_image.size(); i += 0x10000) // start at 0x20000
-        {
-            std::memcpy(&value, &pfs_image[i], sizeof(int));
-            if (value == magic)
-                return i;
-        }
-        return -1;
-    }
-
-    void createDirectory(const QString& path) {
-        QDir dir(path);
-
-        if (!dir.exists()) {
-            if (dir.mkpath(".")) {
-                //	qDebug() << "Directory created successfully: " << path;
-                //	return true;
-            } else {
-                //	qWarning() << "Failed to create directory: " << path;
-                //	return false;
-            }
-        } else {
-            // qDebug() << "Directory already exists: " << path;
-            // return true;
-        }
-    }
-
-    QString findDirectory(const QDir& rootFolder, const QString& targetDirectory) {
-        QStringList filters;
-        filters << targetDirectory;
-
-        QDirIterator it(rootFolder.absolutePath(), filters,
-                        QDir::Dirs | QDir::NoSymLinks | QDir::NoDotAndDotDot,
-                        QDirIterator::Subdirectories);
-        while (it.hasNext()) {
-            it.next();
-            if (it.fileInfo().isDir() && it.fileInfo().fileName() == targetDirectory) {
-                return it.filePath();
-            }
-        }
-        return QString(); // Return an empty string if not found
-    }
+    std::filesystem::path pkgpath;
+    std::filesystem::path current_dir;
+    std::filesystem::path parent_dir;
+    std::filesystem::path extract_path;
+    std::filesystem::path game_dir;
+    std::filesystem::path title_dir;
 };

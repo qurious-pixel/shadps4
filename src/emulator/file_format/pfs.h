@@ -21,31 +21,31 @@ enum PfsMode : unsigned short {
 struct PSFHeader_ {
     s64 version;
     s64 magic;
-    s64 Id;
-    std::byte Fmode; // size = 1 byte
-    std::byte Clean;
-    std::byte ReadOnly;
-    std::byte Rsv;
-    PfsMode Mode;
-    s16 Unk1;
-    s32 BlockSize;
-    s32 NBackup;
-    s64 NBlock;
-    s64 DinodeCount;
-    s64 Ndblock;
-    s64 DinodeBlockCount;
+    s64 id;
+    u8 fmode;
+    u8 clean;
+    u8 read_only;
+    u8 rsv;
+    PfsMode mode;
+    s16 unk1;
+    s32 block_size;
+    s32 n_backup;
+    s64 n_block;
+    s64 dinode_count;
+    s64 nd_block;
+    s64 dinode_block_count;
     s64 superroot_ino;
 };
 
 struct PFSCHdr {
-    s32 Magic;
-    s32 Unk4;
-    s32 Unk8;
-    s32 BlockSz;
-    s64 BlockSz2;
-    s64 BlockOffsets;
-    u64 DataStart;
-    s64 DataLength;
+    s32 magic;
+    s32 unk4;
+    s32 unk8;
+    s32 block_sz;
+    s64 block_sz2;
+    s64 block_offsets;
+    u64 data_start;
+    s64 data_length;
 };
 
 enum InodeMode : u16 {
@@ -83,8 +83,7 @@ enum InodeFlags : u32 {
     internal = 0x20000
 };
 
-struct Inode // UNSIGNED, LE
-{
+struct Inode {
     u16 Mode;
     u16 Nlink;
     u32 Flags;
