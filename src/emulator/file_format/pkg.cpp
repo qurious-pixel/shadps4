@@ -296,7 +296,7 @@ bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extr
                 std::filesystem::create_directories(extract_path);
             }
         }
-        extractMap[inode_number] = extract_path;
+        extractMap[inode_number] = extract_path.string();
     }
     return true;
 }
