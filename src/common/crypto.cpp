@@ -1,4 +1,5 @@
-#include "crypto.h"
+#include <array>
+#include "common/crypto.h"
 
 RSA::PrivateKey Crypto::key_pkg_derived_key3_keyset_init() {
     InvertibleRSAFunction params;
