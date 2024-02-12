@@ -1,15 +1,17 @@
+#include <cstring>
 #include <fstream>
 #include <iostream>
 
 #include "common/io_file.h"
 #include "psf.h"
 
-PSF::PSF() {}
+PSF::PSF() = default;
 
-PSF::~PSF() {}
+PSF::~PSF() = default;
+
 bool PSF::open(const std::string& filepath) {
-    IOFile file;
-    if (!file.open(filepath)) {
+    IOFile file(filepath);
+    if (!file.isOpen()) {
         return false;
     }
 
@@ -19,30 +21,35 @@ bool PSF::open(const std::string& filepath) {
     file.readBytes(&psf[0], psfSize);
 
     // Parse file contents
-    const auto& header = (PSFHeader&)psf[0];
+    PSFHeader header;
+    std::memcpy(&header, psf.data(), sizeof(header));
     for (u32 i = 0; i < header.index_table_entries; i++) {
-        const u32 offset = sizeof(PSFHeader) + i * sizeof(PSFEntry);
-        auto& entry = (PSFEntry&)psf[offset];
+        PSFEntry entry;
+        std::memcpy(&entry, &psf[sizeof(PSFHeader) + i * sizeof(PSFEntry)], sizeof(entry));
 
-        std::string key = (char*)&psf[header.key_table_offset + entry.key_offset];
-        if (entry.param_fmt == PSFEntry::Fmt::TEXT_RAW ||
-            entry.param_fmt == PSFEntry::Fmt::TEXT_NORMAL) {
+        const std::string key = (char*)&psf[header.key_table_offset + entry.key_offset];
+        if (entry.param_fmt == PSFEntry::Fmt::TextRaw ||
+            entry.param_fmt == PSFEntry::Fmt::TextNormal) {
             map_strings[key] = (char*)&psf[header.data_table_offset + entry.data_offset];
         }
-        if (entry.param_fmt == PSFEntry::Fmt::INTEGER) {
-            map_integers[key] = (u32&)psf[header.data_table_offset + entry.data_offset];
+        if (entry.param_fmt == PSFEntry::Fmt::Integer) {
+            u32 value;
+            std::memcpy(&value, &psf[header.data_table_offset + entry.data_offset], sizeof(value));
+            map_integers[key] = value;
         }
     }
 
     return true;
 }
-std::string PSF::get_string(const std::string& key) {
+
+std::string PSF::GetString(const std::string& key) {
     if (map_strings.find(key) != map_strings.end()) {
         return map_strings.at(key);
     }
     return "";
 }
-u32 PSF::get_integer(const std::string& key) {
+
+u32 PSF::GetInteger(const std::string& key) {
     if (map_integers.find(key) != map_integers.end()) {
         return map_integers.at(key); // TODO std::invalid_argument exception if it fails?
     }

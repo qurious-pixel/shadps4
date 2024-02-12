@@ -65,133 +65,103 @@ RSA::PrivateKey Crypto::DebugRifKeyset_init() {
     return privateKey;
 }
 
-void Crypto::RSA2048Decrypt(CryptoPP::byte*& dec_key, unsigned char* ciphertext,
+void Crypto::RSA2048Decrypt(std::span<CryptoPP::byte, 32> dec_key,
+                            std::span<const CryptoPP::byte, 256> ciphertext,
                             bool is_dk3) { // RSAES_PKCS1v15_
     // Create an RSA decryptor
     RSA::PrivateKey privateKey;
-    if (is_dk3)
+    if (is_dk3) {
         privateKey = key_pkg_derived_key3_keyset_init();
-    else
+    } else {
         privateKey = FakeKeyset_keyset_init();
-    size_t ciphertextSize = 256;
+    }
 
     RSAES_PKCS1v15_Decryptor rsaDecryptor(privateKey);
 
     // Allocate memory for the decrypted data
-    CryptoPP::byte* decrypted = new CryptoPP::byte[ciphertextSize];
-    size_t decrypted_key_size = 32;
+    std::array<CryptoPP::byte, 256> decrypted;
 
     // Perform the decryption
     AutoSeededRandomPool rng;
-
-    DecodingResult result = rsaDecryptor.Decrypt(rng, ciphertext, ciphertextSize, decrypted);
-
-    dec_key = new CryptoPP::byte[decrypted_key_size];
-    std::copy(decrypted, decrypted + decrypted_key_size, dec_key);
-    delete[] decrypted;
+    DecodingResult result = rsaDecryptor.Decrypt(rng, ciphertext.data(), decrypted.size(), decrypted.data());
+    std::copy(decrypted.begin(), decrypted.begin() + dec_key.size(), dec_key.begin());
 }
 
-void Crypto::ivKeyHASH256(CryptoPP::byte* cipher_input, CryptoPP::byte*& ivkey_result) {
+void Crypto::ivKeyHASH256(std::span<const CryptoPP::byte, 64> cipher_input,
+                          std::span<CryptoPP::byte, 32> ivkey_result) {
     CryptoPP::SHA256 sha256;
-    CryptoPP::byte* hashResult = new CryptoPP::byte[CryptoPP::SHA256::DIGESTSIZE];
-    size_t decrypted_key_size = 32;
-
-    CryptoPP::ArraySource r(
-        cipher_input, 64, true,
-        new CryptoPP::HashFilter(
-            sha256, new CryptoPP::ArraySink(hashResult, CryptoPP::SHA256::DIGESTSIZE)));
-
-    ivkey_result = new CryptoPP::byte[decrypted_key_size];
-    std::copy(hashResult, hashResult + decrypted_key_size, ivkey_result);
-    delete[] hashResult;
+    std::array<CryptoPP::byte, CryptoPP::SHA256::DIGESTSIZE> hashResult;
+    auto array_sink = new CryptoPP::ArraySink(hashResult.data(), CryptoPP::SHA256::DIGESTSIZE);
+    auto filter = new CryptoPP::HashFilter(sha256, array_sink);
+    CryptoPP::ArraySource r(cipher_input.data(), cipher_input.size(), true, filter);
+    std::copy(hashResult.begin(), hashResult.begin() + ivkey_result.size(), ivkey_result.begin());
 }
 
-void Crypto::aesCbcCfb128Decrypt(CryptoPP::byte* ivkey, CryptoPP::byte* ciphertext,
-                                 CryptoPP::byte*& decrypted) {
-    size_t subarraySize = 16;
-    size_t cipher_size = 256;
-    CryptoPP::byte* key = new CryptoPP::byte[subarraySize];
-    CryptoPP::byte* iv = new CryptoPP::byte[subarraySize];
+void Crypto::aesCbcCfb128Decrypt(std::span<const CryptoPP::byte, 32> ivkey,
+                                 std::span<const CryptoPP::byte, 256> ciphertext,
+                                 std::span<CryptoPP::byte, 256> decrypted) {
+    std::array<CryptoPP::byte, CryptoPP::AES::DEFAULT_KEYLENGTH> key;
+    std::array<CryptoPP::byte, CryptoPP::AES::DEFAULT_KEYLENGTH> iv;
 
-    std::copy(ivkey + 16, ivkey + 16 + subarraySize, key);
-    std::copy(ivkey, ivkey + subarraySize, iv);
+    std::copy(ivkey.begin() + 16, ivkey.begin() + 16 + key.size(), key.begin());
+    std::copy(ivkey.begin(), ivkey.begin() + iv.size(), iv.begin());
 
-    CryptoPP::AES::Decryption aesDecryption(key, CryptoPP::AES::DEFAULT_KEYLENGTH);
-    CryptoPP::CBC_Mode_ExternalCipher::Decryption cbcDecryption(aesDecryption, iv);
+    CryptoPP::AES::Decryption aesDecryption(key.data(), CryptoPP::AES::DEFAULT_KEYLENGTH);
+    CryptoPP::CBC_Mode_ExternalCipher::Decryption cbcDecryption(aesDecryption, iv.data());
 
-    decrypted = new CryptoPP::byte[cipher_size];
-
-    for (size_t i = 0; i < cipher_size; i += CryptoPP::AES::BLOCKSIZE) {
-        cbcDecryption.ProcessData(decrypted + i, ciphertext + i, CryptoPP::AES::BLOCKSIZE);
+    for (size_t i = 0; i < decrypted.size(); i += CryptoPP::AES::BLOCKSIZE) {
+        cbcDecryption.ProcessData(decrypted.data() + i, ciphertext.data() + i, CryptoPP::AES::BLOCKSIZE);
     }
-    delete[] key;
-    delete[] iv;
 }
 
-void Crypto::PfsGenCryptoKey(CryptoPP::byte*& data_tweak_key, CryptoPP::byte*& ekpfs,
-                             CryptoPP::byte* seed, CryptoPP::byte*& dataKey,
-                             CryptoPP::byte*& tweakKey) {
-    size_t ekpfsSize = 32;
-    size_t seedSize = 16;
-    uint32_t index = 1;
-
-    CryptoPP::HMAC<CryptoPP::SHA256> hmac(ekpfs, ekpfsSize);
+void Crypto::PfsGenCryptoKey(std::span<const CryptoPP::byte, 32> ekpfs,
+                             std::span<const CryptoPP::byte, 16> seed,
+                             std::span<CryptoPP::byte, 16> dataKey,
+                             std::span<CryptoPP::byte, 16> tweakKey) {
+    CryptoPP::HMAC<CryptoPP::SHA256> hmac(ekpfs.data(), ekpfs.size());
 
     CryptoPP::SecByteBlock d(20); // Use Crypto++ SecByteBlock for better memory management
 
     // Copy the bytes of 'index' to the 'd' array
+    uint32_t index = 1;
     std::memcpy(d, &index, sizeof(uint32_t));
 
     // Copy the bytes of 'seed' to the 'd' array starting from index 4
-    std::memcpy(d + sizeof(uint32_t), seed, seedSize);
+    std::memcpy(d + sizeof(uint32_t), seed.data(), seed.size());
 
     // Allocate memory for 'u64' using new
-    data_tweak_key = new CryptoPP::byte[hmac.DigestSize()];
-    dataKey = new CryptoPP::byte[16];
-    tweakKey = new CryptoPP::byte[16];
+    std::vector<CryptoPP::byte> data_tweak_key(hmac.DigestSize());
 
     // Calculate the HMAC
-    hmac.CalculateDigest(data_tweak_key, d, d.size());
-
-    std::copy(data_tweak_key, data_tweak_key + 16, tweakKey);
-    std::copy(data_tweak_key + 16, data_tweak_key + 32, dataKey);
+    hmac.CalculateDigest(data_tweak_key.data(), d, d.size());
+    std::copy(data_tweak_key.begin(), data_tweak_key.begin() + dataKey.size(), tweakKey.begin());
+    std::copy(data_tweak_key.begin() + tweakKey.size(),
+              data_tweak_key.begin() + tweakKey.size() + dataKey.size(), dataKey.begin());
 }
 
-void Crypto::decryptPFS(CryptoPP::byte* dataKey, CryptoPP::byte* tweakKey, u8* src_image,
-                        CryptoPP::byte*& dst_image, int length, u64 sector) {
-    for (int i = 0; i < length;
-         i += 0x1000) { // start at 0x10000 to keep the header when decrypting the whole pfs_image.
-        u64 currentSector = sector + (i / 0x1000);
-        CryptoPP::ECB_Mode<AES>::Encryption encrypt(tweakKey, 16);
-        CryptoPP::ECB_Mode<AES>::Decryption decrypt(dataKey, 16);
+void Crypto::decryptPFS(std::span<const CryptoPP::byte, 16> dataKey,
+                        std::span<const CryptoPP::byte, 16> tweakKey,
+                        std::span<const u8> src_image,
+                        std::span<CryptoPP::byte> dst_image, u64 sector) {
+    // Start at 0x10000 to keep the header when decrypting the whole pfs_image.
+    for (int i = 0; i < src_image.size(); i += 0x1000) {
+        const u64 current_sector = sector + (i / 0x1000);
+        CryptoPP::ECB_Mode<AES>::Encryption encrypt(tweakKey.data(), tweakKey.size());
+        CryptoPP::ECB_Mode<AES>::Decryption decrypt(dataKey.data(), dataKey.size());
 
-        CryptoPP::byte* tweak = new CryptoPP::byte[16];
-        CryptoPP::byte* encryptedTweak = new CryptoPP::byte[16];
-        CryptoPP::byte* xorBuffer = new CryptoPP::byte[16];
-        CryptoPP::byte* zeros = new CryptoPP::byte[8];
-        unsigned char sectorBytes[8];
-
-        for (int j = 0; j < 8; j++) {
-            zeros[j] = 0;
-            // Shift the bits to the right to isolate each byte
-            sectorBytes[j] = static_cast<unsigned char>((currentSector >> (j * 8)) & 0xFF);
-        }
-
-        memcpy(tweak, sectorBytes, 8);
-        memcpy(tweak + 8, zeros, 8);
+        std::array<CryptoPP::byte, 16> tweak{};
+        std::array<CryptoPP::byte, 16> encryptedTweak;
+        std::array<CryptoPP::byte, 16> xorBuffer;
+        std::memcpy(tweak.data(), &current_sector, sizeof(u64));
 
         // Encrypt the tweak for each sector.
-        encrypt.ProcessData(encryptedTweak, tweak, 16);
+        encrypt.ProcessData(encryptedTweak.data(), tweak.data(), 16);
 
         for (int plaintextOffset = 0; plaintextOffset < 0x1000; plaintextOffset += 16) {
-            xtsXorBlock(xorBuffer, src_image + i + plaintextOffset, encryptedTweak); // x, c, t
-            decrypt.ProcessData(xorBuffer, xorBuffer, 16);                           // x, x
-            xtsXorBlock(dst_image + i + plaintextOffset, xorBuffer, encryptedTweak); //(p)  c, x , t
+            xtsXorBlock(xorBuffer.data(), src_image.data() + i + plaintextOffset, encryptedTweak.data()); // x, c, t
+            decrypt.ProcessData(xorBuffer.data(), xorBuffer.data(), 16);                           // x, x
+            xtsXorBlock(dst_image.data() + i + plaintextOffset, xorBuffer.data(), encryptedTweak.data()); //(p)  c, x , t
             xtsMult(encryptedTweak);
         }
-        delete[] tweak;
-        delete[] encryptedTweak;
-        delete[] xorBuffer;
-        delete[] zeros;
     }
 }

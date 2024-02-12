@@ -1,4 +1,5 @@
 #pragma once
+
 #include <array>
 #include <string>
 #include <unordered_map>
@@ -9,12 +10,9 @@
 #include <QDirIterator>
 #include <QMap>
 #include <QString>
-#include <zlib-ng.h>
 
 #include "common/endian.h"
 #include "common/crypto.h"
-#include "common/types.h"
-#include "common/io_file.h"
 #include "pfs.h"
 
 struct PKGHeader {
@@ -86,22 +84,8 @@ struct PKGEntry {
     u32_be offset;          // Offset into PKG to find the file
     u32_be size;            // Size of the file
     u64_be padding;         // blank padding
-
-    CryptoPP::byte* GetBytes() const {
-        CryptoPP::byte* buf =
-            new CryptoPP::byte[sizeof(PKGEntry) + 8]; // forgot why I added 8 but I had to. padding
-                                                      // maybe?? was necessary!!
-        std::memcpy(buf, this, sizeof(PKGEntry) + 8);
-        return buf;
-    }
 };
-
-inline void concatenate(CryptoPP::byte* a, CryptoPP::byte* b, CryptoPP::byte* dst) {
-    size_t size1 = 32;
-    size_t size2 = 32;
-    std::memcpy(dst, a, size1);
-    std::memcpy(dst + size1, b, size2);
-}
+static_assert(sizeof(PKGEntry) == 32);
 
 class PKG {
 private:
@@ -110,21 +94,22 @@ private:
     char pkgTitleID[9];
     std::string extractPath;
     PKGHeader pkgheader;
+    std::vector<char> compressedData;
+    std::vector<char> decompressedData;
 
     std::unordered_map<int, std::string> folderMap;
     std::unordered_map<int, QString> extractMap;
     QVector<pfs_fs_table> fsTable;
     QVector<Inode> iNodeBuf;
-    u64* sectorMap;
+    std::vector<u64> sectorMap;
     u64 pfscPos;
 
-    CryptoPP::byte* dk3_;
-    CryptoPP::byte* ivKey;
-    CryptoPP::byte* imgKey;
-    CryptoPP::byte* ekpfsKey;
-    CryptoPP::byte* dataTweakKey;
-    CryptoPP::byte* dataKey;
-    CryptoPP::byte* tweakKey;
+    std::array<CryptoPP::byte, 32> dk3_;
+    std::array<CryptoPP::byte, 32> ivKey;
+    std::array<CryptoPP::byte, 256> imgKey;
+    std::array<CryptoPP::byte, 32> ekpfsKey;
+    std::array<CryptoPP::byte, 16> dataKey;
+    std::array<CryptoPP::byte, 16> tweakKey;
 
     std::string pkgpath;
     QString currentDir;
@@ -149,11 +134,11 @@ public:
     bool extract(const std::string& filepath, const std::string& extractPath,
                  std::string& failreason);
 
-    int get_pfsc_pos(u8* pfs_image, int length) {
+    int get_pfsc_pos(std::span<const u8> pfs_image) {
         s32 magic = 0x43534650; // PFSC.
         int value;
 
-        for (int i = 0x20000; i < length; i += 0x10000) // start at 0x20000
+        for (int i = 0x20000; i < pfs_image.size(); i += 0x10000) // start at 0x20000
         {
             std::memcpy(&value, &pfs_image[i], sizeof(int));
             if (value == magic)
@@ -193,30 +178,6 @@ public:
             }
         }
         return QString(); // Return an empty string if not found
-    }
-
-    void decompress_pfsc(char* compressedData, size_t compressedSize, char* decompressedData,
-                         size_t decompressedSize) {
-        zng_stream decompressStream;
-        decompressStream.zalloc = Z_NULL;
-        decompressStream.zfree = Z_NULL;
-        decompressStream.opaque = Z_NULL;
-
-        if (zng_inflateInit(&decompressStream) != Z_OK) {
-            // std::cerr << "Error initializing zlib for deflation." << std::endl;
-        }
-
-        decompressStream.avail_in = compressedSize;
-        decompressStream.next_in = reinterpret_cast<const Bytef*>(compressedData);
-
-        decompressStream.avail_out = decompressedSize;
-        decompressStream.next_out = reinterpret_cast<Bytef*>(decompressedData);
-
-        if (zng_inflate(&decompressStream, Z_FINISH)) {
-        }
-        if (zng_inflateEnd(&decompressStream) != Z_OK) {
-            // std::cerr << "Error ending zlib inflate" << std::endl;
-        }
     }
 
     typedef struct {

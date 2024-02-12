@@ -304,15 +304,15 @@ void game_list_frame::Refresh(const bool from_drive, const bool scroll_after) {
             if (psf.open(game.path + "/sce_sys/param.sfo")) {
                 QString iconpath(QString::fromStdString(game.path) + "/sce_sys/icon0.png");
                 game.icon_path = iconpath.toStdString();
-                game.name = psf.get_string("TITLE");
-                game.serial = psf.get_string("TITLE_ID");
+                game.name = psf.GetString("TITLE");
+                game.serial = psf.GetString("TITLE_ID");
                 game.fw =
-                    (QString("%1").arg(psf.get_integer("SYSTEM_VER"), 8, 16, QLatin1Char('0')))
+                    (QString("%1").arg(psf.GetInteger("SYSTEM_VER"), 8, 16, QLatin1Char('0')))
                         .mid(1, 3)
                         .insert(1, '.')
                         .toStdString();
-                game.version = psf.get_string("APP_VER");
-                game.category = psf.get_string("CATEGORY");
+                game.version = psf.GetString("APP_VER");
+                game.category = psf.GetString("CATEGORY");
 
                 m_titles.insert(QString::fromStdString(game.serial),
                                 QString::fromStdString(game.name));
