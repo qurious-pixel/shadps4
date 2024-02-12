@@ -2,6 +2,7 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QPainter>
+#include <QScrollBar>
 
 #include "../emulator/file_format/psf.h"
 #include "custom_table_widget_item.h"
@@ -300,8 +301,8 @@ void game_list_frame::Refresh(const bool from_drive, const bool scroll_after) {
             GameInfo game{};
             game.path = dir;
             PSF psf;
-            if (psf.open(game.path + "/sce_sys/PARAM.SFO")) {
-                QString iconpath(QString::fromStdString(game.path) + "/sce_sys/ICON0.PNG");
+            if (psf.open(game.path + "/sce_sys/param.sfo")) {
+                QString iconpath(QString::fromStdString(game.path) + "/sce_sys/icon0.png");
                 game.icon_path = iconpath.toStdString();
                 game.name = psf.get_string("TITLE");
                 game.serial = psf.get_string("TITLE_ID");

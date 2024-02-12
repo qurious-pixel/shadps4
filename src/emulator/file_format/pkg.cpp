@@ -32,7 +32,11 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
         return false;
     }
     pkgSize = file.size().value();
-    file.readBytes(&pkgheader, sizeof(PKGHeader));
+    if (const auto [is_read, num_read] = file.readBytes(&pkgheader, sizeof(PKGHeader));
+        !is_read || num_read != sizeof(PKGHeader)) {
+        failreason = "Could not read PKG header";
+        return false;
+    }
 
     if (pkgheader.pkg_size > pkgSize) {
         failreason = "PKG file size is different";
@@ -43,13 +47,8 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
         return false;
     }
     file.seek(0);
-    pkg = (u08*)mmap(pkgSize, file.getHandle(), 0);
-    if (pkg == nullptr) {
-        failreason = "Can't allocate size for image";
-        return false;
-    }
-
-    file.readBytes(pkg, pkgSize);
+    pkg.resize(pkgSize);
+    file.readBytes(pkg.data(), pkgSize);
 
     u32 offset = pkgheader.pkg_table_entry_offset;
     u32 n_files = pkgheader.pkg_table_entry_count;
@@ -115,39 +114,35 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
 
             IOFile out;
             out.open(extractPath + "/sce_sys/" + name, "wb");
-            out.writeBytes(pkg + entry.offset, entry.size);
+            out.writeBytes(pkg.data() + entry.offset, entry.size);
             out.close();
         } else {
             // just print with id
             IOFile out;
             out.open(extractPath + "/sce_sys/" + std::to_string(entry.id), "wb");
-            out.writeBytes(pkg + entry.offset, entry.size);
+            out.writeBytes(pkg.data() + entry.offset, entry.size);
             out.close();
         }
     }
-    munmap(pkg);
 
     CryptoPP::byte* seed = new CryptoPP::byte[16];
 
-    file.seek(pkgheader.pfs_image_offset + 0x370);
+    if (!file.seek(pkgheader.pfs_image_offset + 0x370)) {
+        return false;
+    }
     file.readBytes(seed, 16);
 
     // Get data and tweak keys.
     PKG::crypto.PfsGenCryptoKey(dataTweakKey, ekpfsKey, seed, dataKey, tweakKey);
 
     delete[] seed;
+    int length = pkgheader.pfs_cache_size * 0x2; // Seems to be ok.
 
-    int length = 0; // find a better way to do this.
-
-    if (file.size().value() < 0x1200000) {
-        length = pkgheader.pfs_image_size;
+    std::vector<u08> pfs_copy(length);
+    if (!file.seek(pkgheader.pfs_image_offset)) {
+        return false;
     }
-
-    else {
-        length = 0x1200000;
-    }
-
-    u08* pfs_copy = (u08*)mmap(length, file.getHandle(), pkgheader.pfs_image_offset);
+    file.readBytes(pfs_copy.data(), length);
 
     u08* pfs_decrypted = new u08[length];
     // std::memcpy(pfs_decrypted, pfs_copy, 0x10000);  // copy the first 16 blocks "as is", they
@@ -155,10 +150,8 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
     // pfs_decrypted[0x1C] = pfs_copy[0x1C] & ~4;	    // remove the "encrypted" flag, no need to
     // do this but ok.
 
-    PKG::crypto.decryptPFS(dataKey, tweakKey, pfs_copy, pfs_decrypted, length,
+    PKG::crypto.decryptPFS(dataKey, tweakKey, pfs_copy.data(), pfs_decrypted, length,
                            0); // Decrypt the pfs_image.
-
-    munmap(pfs_copy);
 
     pfscPos = get_pfsc_pos(pfs_decrypted, length);
     u08* pfsc = new u08[length];
@@ -167,6 +160,7 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
     delete[] pfs_decrypted;
 
     PFSCHdr pfsChdr = (PFSCHdr&)pfsc[0];
+
 
     int num_blocks = (int)(pfsChdr.DataLength / pfsChdr.BlockSz2);
     sectorMap = new u64[num_blocks + 1]; // 8 bytes, need extra 1 to get the last offset.

@@ -3,15 +3,13 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <io.h>
-#include <stdio.h>
-#include <windows.h>
+#include <cstdio>
 
 #include <QDir>
 #include <QDirIterator>
 #include <QMap>
 #include <QString>
-#include <QtZlib/zlib.h>
+#include <zlib-ng.h>
 
 #include "../../common/common.h" //TODO fix me!
 #include "../../common/crypto.h" //TODO fix me!
@@ -107,7 +105,7 @@ inline void concatenate(CryptoPP::byte* a, CryptoPP::byte* b, CryptoPP::byte* ds
 
 class PKG {
 private:
-    u08* pkg;
+    std::vector<u08> pkg;
     u64 pkgSize = 0;
     char pkgTitleID[9];
     std::string extractPath;
@@ -150,31 +148,6 @@ public:
     }
     bool extract(const std::string& filepath, const std::string& extractPath,
                  std::string& failreason);
-
-    void* mmap(size_t sLength, std::FILE* nFd, size_t offset) {
-        HANDLE hHandle;
-        void* pStart;
-        hHandle = CreateFileMapping((HANDLE)_get_osfhandle(_fileno((nFd))),
-                                    NULL,          // default security
-                                    PAGE_READONLY, // read/write access
-                                    0,             // maximum object size (high-order DWORD)
-                                    0,             // maximum object size (low-order DWORD)
-                                    NULL);         // name of mapping object
-
-        if (hHandle != NULL) {
-            pStart = MapViewOfFile(hHandle, FILE_MAP_READ, 0, offset, sLength);
-        }
-        if (pStart == NULL) {
-            return nullptr;
-        }
-        return pStart;
-    }
-    int munmap(void* pStart) {
-        if (UnmapViewOfFile(pStart) != 0)
-            return FALSE;
-        CloseHandle(pStart);
-        return TRUE;
-    }
 
     int get_pfsc_pos(u08* pfs_image, int length) {
         s32 magic = 0x43534650; // PFSC.
@@ -222,28 +195,26 @@ public:
         return QString(); // Return an empty string if not found
     }
 
-    void decompress_pfsc(char*& compressedData, size_t compressedSize, char*& decompressedData,
+    void decompress_pfsc(char* compressedData, size_t compressedSize, char* decompressedData,
                          size_t decompressedSize) {
-
-        z_stream decompressStream;
+        zng_stream decompressStream;
         decompressStream.zalloc = Z_NULL;
         decompressStream.zfree = Z_NULL;
         decompressStream.opaque = Z_NULL;
 
-        if (inflateInit(&decompressStream) != Z_OK) {
+        if (zng_inflateInit(&decompressStream) != Z_OK) {
             // std::cerr << "Error initializing zlib for deflation." << std::endl;
         }
 
         decompressStream.avail_in = compressedSize;
-        decompressStream.next_in = (Bytef*)(compressedData);
+        decompressStream.next_in = reinterpret_cast<const Bytef*>(compressedData);
 
         decompressStream.avail_out = decompressedSize;
-        decompressStream.next_out = (Bytef*)(decompressedData);
+        decompressStream.next_out = reinterpret_cast<Bytef*>(decompressedData);
 
-        if (inflate(&decompressStream, Z_FINISH)) {
+        if (zng_inflate(&decompressStream, Z_FINISH)) {
         }
-
-        if (inflateEnd(&decompressStream) != Z_OK) {
+        if (zng_inflateEnd(&decompressStream) != Z_OK) {
             // std::cerr << "Error ending zlib inflate" << std::endl;
         }
     }

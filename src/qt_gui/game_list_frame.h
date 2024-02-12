@@ -3,7 +3,6 @@
 #include <deque>
 #include <QFutureWatcher>
 #include <QHeaderView>
-#include <QScrollbar>
 #include <QStackedWidget>
 #include <QWidget>
 #include <QtConcurrent>

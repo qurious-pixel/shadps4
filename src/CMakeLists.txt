@@ -41,9 +41,9 @@ qt_add_executable(shadps4
 create_target_directory_groups(shadps4)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND MSVC) #ugly probably make it better :D
-    target_link_libraries(shadps4 PRIVATE Qt6::Widgets Qt6::Concurrent cryptoppwin)
+    target_link_libraries(shadps4 PRIVATE Qt6::Widgets Qt6::Concurrent cryptoppwin zlib)
 else()
-    target_link_libraries(shadps4 PRIVATE Qt6::Widgets Qt6::Concurrent cryptopp::cryptopp)
+    target_link_libraries(shadps4 PRIVATE Qt6::Widgets Qt6::Concurrent cryptopp::cryptopp zlib)
 endif()
 
 set_target_properties(shadps4 PROPERTIES

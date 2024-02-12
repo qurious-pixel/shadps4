@@ -19,12 +19,12 @@ using f64 = double;
 #define PS4_SYSV_ABI __attribute__((sysv_abi))
 
 // UDLs for memory size values
-constexpr u64 operator""_KB(u64 x) {
+constexpr unsigned long long operator""_KB(unsigned long long x) {
     return 1024ULL * x;
 }
-constexpr u64 operator""_MB(u64 x) {
+constexpr unsigned long long operator""_MB(unsigned long long x) {
     return 1024_KB * x;
 }
-constexpr u64 operator""_GB(u64 x) {
+constexpr unsigned long long operator""_GB(unsigned long long x) {
     return 1024_MB * x;
 }
