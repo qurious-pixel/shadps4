@@ -30,6 +30,8 @@ qt_add_executable(shadps4
     common/keys.h
     emulator/file_format/psf.cpp
     emulator/file_format/psf.h
+    emulator/file_format/pkg_type.cpp
+    emulator/file_format/pkg_type.h
     emulator/file_format/pkg.cpp
     emulator/file_format/pkg.h
     emulator/file_format/pfs.h

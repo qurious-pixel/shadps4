@@ -1,5 +1,5 @@
-#pragma clang optimize off
 #include "common/io_file.h"
+#include "emulator/file_format/pkg_type.h"
 #include "emulator/file_format/pkg.h"
 
 #include <zlib-ng.h>
@@ -53,8 +53,8 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
                   std::string& failreason) {
     this->extractPath = extractPath;
     pkgpath = filepath;
-    IOFile file;
-    if (!file.open(filepath)) {
+    IOFile file(filepath);
+    if (!file.isOpen()) {
         return false;
     }
     pkgSize = file.size().value();
@@ -89,17 +89,16 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
         std::memcpy(&entry, &pkg[offset + i * 0x20], sizeof(entry));
 
         // Try to figure out the name
-        std::string name = getEntryNameByType(entry.id);
+        const auto name = GetEntryNameByType(entry.id);
         if (name.empty()) {
             // Just print with id
-            IOFile out;
-            out.open(extractPath + "/sce_sys/" + std::to_string(entry.id), "wb");
+            IOFile out(extractPath + "/sce_sys/" + std::to_string(entry.id), "wb");
             out.writeBytes(pkg.data() + entry.offset, entry.size);
             out.close();
             continue;
         }
 
-        QString filepath = QString::fromStdString(extractPath + "/sce_sys/" + name);
+        QString filepath = QString::fromStdString(extractPath + "/sce_sys/" + std::string{name});
         QDir dir = QFileInfo(filepath).dir();
         if (!dir.exists()) {
             dir.mkpath(dir.path());
@@ -139,8 +138,7 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
             // file.Seek(entry.offset, fsSeekSet);
         }
 
-        IOFile out;
-        out.open(extractPath + "/sce_sys/" + name, "wb");
+        IOFile out(extractPath + "/sce_sys/" + std::string{name}, "wb");
         out.writeBytes(pkg.data() + entry.offset, entry.size);
         out.close();
     }
@@ -285,7 +283,7 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
         } else if (inode_type == PFS_PARENT_DIR) {
             parentDir = folderMap[inode_number].c_str();
 
-            if (i > 1) { // skip uroot folder. we create our own game uid folder
+            if (i > 1) { // Skip uroot folder. we create our own game uid folder
                 QString par_dir;
 
                 if (inode_number == 2) // Check the parent dir first.
