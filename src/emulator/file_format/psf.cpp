@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "../../common/io_file.h"
+#include "common/io_file.h"
 #include "psf.h"
 
 PSF::PSF() {}

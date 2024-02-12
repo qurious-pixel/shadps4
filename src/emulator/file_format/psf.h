@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../../common/endian.h" //TODO fix me!
+#include "common/endian.h"
 
 struct PSFHeader {
     u32_be magic; // big endian

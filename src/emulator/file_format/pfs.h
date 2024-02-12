@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <string>
 
-#include "../../common/types.h" //TODO fix me!
+#include "common/types.h"
 
 #define PFS_FILE 2
 #define PFS_DIR 3

@@ -11,10 +11,10 @@
 #include <QString>
 #include <zlib-ng.h>
 
-#include "../../common/endian.h" //TODO fix me!
-#include "../../common/crypto.h" //TODO fix me!
-#include "../../common/types.h" //TODO fix me!
-#include "../../common/io_file.h"
+#include "common/endian.h"
+#include "common/crypto.h"
+#include "common/types.h"
+#include "common/io_file.h"
 #include "pfs.h"
 
 struct PKGHeader {
