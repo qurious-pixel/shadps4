@@ -11,81 +11,81 @@
 #include <QString>
 #include <zlib-ng.h>
 
-#include "../../common/common.h" //TODO fix me!
+#include "../../common/endian.h" //TODO fix me!
 #include "../../common/crypto.h" //TODO fix me!
 #include "../../common/types.h" //TODO fix me!
 #include "../../common/io_file.h"
 #include "pfs.h"
 
 struct PKGHeader {
-    BE<u32> magic; // Magic
-    BE<u32> pkg_type;
-    BE<u32> pkg_0x8; // unknown field
-    BE<u32> pkg_file_count;
-    BE<u32> pkg_table_entry_count;
-    BE<u16> pkg_sc_entry_count;
-    BE<u16> pkg_table_entry_count_2; // same as pkg_entry_count
-    BE<u32> pkg_table_entry_offset;  // file table offset
-    BE<u32> pkg_sc_entry_data_size;
-    BE<u64> pkg_body_offset; // offset of PKG entries
-    BE<u64> pkg_body_size;   // length of all PKG entries
-    BE<u64> pkg_content_offset;
-    BE<u64> pkg_content_size;
-    LE<u08> pkg_content_id[0x24]; // packages' content ID as a 36-byte string
-    LE<u08> pkg_padding[0xC];     // padding
-    BE<u32> pkg_drm_type;         // DRM type
-    BE<u32> pkg_content_type;     // Content type
-    BE<u32> pkg_content_flags;    // Content flags
-    BE<u32> pkg_promote_size;
-    BE<u32> pkg_version_date;
-    BE<u32> pkg_version_hash;
-    BE<u32> pkg_0x088;
-    BE<u32> pkg_0x08C;
-    BE<u32> pkg_0x090;
-    BE<u32> pkg_0x094;
-    BE<u32> pkg_iro_tag;
-    BE<u32> pkg_drm_type_version;
+    u32_be magic; // Magic
+    u32_be pkg_type;
+    u32_be pkg_0x8; // unknown field
+    u32_be pkg_file_count;
+    u32_be pkg_table_entry_count;
+    u16_be pkg_sc_entry_count;
+    u16_be pkg_table_entry_count_2; // same as pkg_entry_count
+    u32_be pkg_table_entry_offset;  // file table offset
+    u32_be pkg_sc_entry_data_size;
+    u64_be pkg_body_offset; // offset of PKG entries
+    u64_be pkg_body_size;   // length of all PKG entries
+    u64_be pkg_content_offset;
+    u64_be pkg_content_size;
+    u8 pkg_content_id[0x24]; // packages' content ID as a 36-byte string
+    u8 pkg_padding[0xC];     // padding
+    u32_be pkg_drm_type;         // DRM type
+    u32_be pkg_content_type;     // Content type
+    u32_be pkg_content_flags;    // Content flags
+    u32_be pkg_promote_size;
+    u32_be pkg_version_date;
+    u32_be pkg_version_hash;
+    u32_be pkg_0x088;
+    u32_be pkg_0x08C;
+    u32_be pkg_0x090;
+    u32_be pkg_0x094;
+    u32_be pkg_iro_tag;
+    u32_be pkg_drm_type_version;
 
-    LE<u08> pkg_zeroes_1[0x60];
+    u8 pkg_zeroes_1[0x60];
 
     /* Digest table */
-    LE<u08> digest_entries1[0x20];     // sha256 digest for main entry 1
-    LE<u08> digest_entries2[0x20];     // sha256 digest for main entry 2
-    LE<u08> digest_table_digest[0x20]; // sha256 digest for digest table
-    LE<u08> digest_body_digest[0x20];  // sha256 digest for main table
+    u8 digest_entries1[0x20];     // sha256 digest for main entry 1
+    u8 digest_entries2[0x20];     // sha256 digest for main entry 2
+    u8 digest_table_digest[0x20]; // sha256 digest for digest table
+    u8 digest_body_digest[0x20];  // sha256 digest for main table
 
-    LE<u08> pkg_zeroes_2[0x280];
+    u8 pkg_zeroes_2[0x280];
 
-    BE<u32> pkg_0x400;
+    u32_be pkg_0x400;
 
-    BE<u32> pfs_image_count;  // count of PFS images
-    BE<u64> pfs_image_flags;  // PFS flags
-    BE<u64> pfs_image_offset; // offset to start of external PFS image
-    BE<u64> pfs_image_size;   // size of external PFS image
-    BE<u64> mount_image_offset;
-    BE<u64> mount_image_size;
-    BE<u64> pkg_size;
-    BE<u32> pfs_signed_size;
-    BE<u32> pfs_cache_size;
-    LE<u08> pfs_image_digest[0x20];
-    LE<u08> pfs_signed_digest[0x20];
-    BE<u64> pfs_split_size_nth_0;
-    BE<u64> pfs_split_size_nth_1;
+    u32_be pfs_image_count;  // count of PFS images
+    u64_be pfs_image_flags;  // PFS flags
+    u64_be pfs_image_offset; // offset to start of external PFS image
+    u64_be pfs_image_size;   // size of external PFS image
+    u64_be mount_image_offset;
+    u64_be mount_image_size;
+    u64_be pkg_size;
+    u32_be pfs_signed_size;
+    u32_be pfs_cache_size;
+    u8 pfs_image_digest[0x20];
+    u8 pfs_signed_digest[0x20];
+    u64_be pfs_split_size_nth_0;
+    u64_be pfs_split_size_nth_1;
 
-    LE<u08> pkg_zeroes_3[0xB50];
+    u8 pkg_zeroes_3[0xB50];
 
-    LE<u08> pkg_digest[0x20];
+    u8 pkg_digest[0x20];
 };
 
 struct PKGEntry {
-    BE<u32> id;              // File ID, useful for files without a filename entry
-    BE<u32> filename_offset; // Offset into the filenames table (ID 0x200) where this file's name is
+    u32_be id;              // File ID, useful for files without a filename entry
+    u32_be filename_offset; // Offset into the filenames table (ID 0x200) where this file's name is
                              // located
-    BE<u32> flags1;          // Flags including encrypted flag, etc
-    BE<u32> flags2;          // Flags including encryption key index, etc
-    BE<u32> offset;          // Offset into PKG to find the file
-    BE<u32> size;            // Size of the file
-    BE<u64> padding;         // blank padding
+    u32_be flags1;          // Flags including encrypted flag, etc
+    u32_be flags2;          // Flags including encryption key index, etc
+    u32_be offset;          // Offset into PKG to find the file
+    u32_be size;            // Size of the file
+    u64_be padding;         // blank padding
 
     CryptoPP::byte* GetBytes() const {
         CryptoPP::byte* buf =
@@ -105,7 +105,7 @@ inline void concatenate(CryptoPP::byte* a, CryptoPP::byte* b, CryptoPP::byte* ds
 
 class PKG {
 private:
-    std::vector<u08> pkg;
+    std::vector<u8> pkg;
     u64 pkgSize = 0;
     char pkgTitleID[9];
     std::string extractPath;
@@ -149,7 +149,7 @@ public:
     bool extract(const std::string& filepath, const std::string& extractPath,
                  std::string& failreason);
 
-    int get_pfsc_pos(u08* pfs_image, int length) {
+    int get_pfsc_pos(u8* pfs_image, int length) {
         s32 magic = 0x43534650; // PFSC.
         int value;
 

@@ -31,7 +31,7 @@ public:
                              CryptoPP::byte*& decrypted);
     void PfsGenCryptoKey(CryptoPP::byte*& data_tweak_key, CryptoPP::byte*& ekpfs,
                          CryptoPP::byte* seed, CryptoPP::byte*& dataKey, CryptoPP::byte*& tweakKey);
-    void decryptPFS(CryptoPP::byte* dataKey, CryptoPP::byte* tweakKey, u08* src_image,
+    void decryptPFS(CryptoPP::byte* dataKey, CryptoPP::byte* tweakKey, u8* src_image,
                     CryptoPP::byte*& dst_image, int length, u64 sector);
 
     void xtsXorBlock(CryptoPP::byte* x, const CryptoPP::byte* a, const CryptoPP::byte* b) {

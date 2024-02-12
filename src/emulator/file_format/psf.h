@@ -4,15 +4,14 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../../common/common.h" //TODO fix me!
-#include "../../common/types.h"  //TODO fix me!
+#include "../../common/endian.h" //TODO fix me!
 
 struct PSFHeader {
-    BE<u32> magic; // big endian
-    LE<u32> version;
-    LE<u32> key_table_offset;
-    LE<u32> data_table_offset;
-    LE<u32> index_table_entries;
+    u32_be magic; // big endian
+    u32_le version;
+    u32_le key_table_offset;
+    u32_le data_table_offset;
+    u32_le index_table_entries;
 };
 
 struct PSFEntry {
@@ -22,15 +21,15 @@ struct PSFEntry {
         INTEGER = 0x0404,     // Unsigned 32-bit integer
     };
 
-    LE<u16> key_offset;
-    BE<u16> param_fmt; // big endian
-    LE<u32> param_len;
-    LE<u32> param_max_len;
-    LE<u32> data_offset;
+    u16_le key_offset;
+    u16_be param_fmt; // big endian
+    u32_le param_len;
+    u32_le param_max_len;
+    u32_le data_offset;
 };
 
 class PSF {
-    std::vector<u08> psf;
+    std::vector<u8> psf;
     std::unordered_map<std::string, std::string> map_strings;
     std::unordered_map<std::string, u32> map_integers;
 

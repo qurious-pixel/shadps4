@@ -21,11 +21,10 @@ qt_add_executable(shadps4
     qt_gui/game_list_frame.cpp
     qt_gui/game_list_frame.h
     qt_gui/qt_utils.h
-    common/common.h
     common/io_file.cpp
     common/io_file.h
     common/types.h
-    common/endianness.h
+    common/endian.h
     common/crypto.cpp
     common/crypto.h
     common/keys.h
@@ -45,6 +44,8 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND MSVC) #ugly probably make it bette
 else()
     target_link_libraries(shadps4 PRIVATE Qt6::Widgets Qt6::Concurrent cryptopp::cryptopp zlib)
 endif()
+
+target_include_directories(shadps4 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 set_target_properties(shadps4 PROPERTIES
     WIN32_EXECUTABLE ON

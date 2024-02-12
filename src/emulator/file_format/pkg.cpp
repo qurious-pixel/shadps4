@@ -138,13 +138,13 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
     delete[] seed;
     int length = pkgheader.pfs_cache_size * 0x2; // Seems to be ok.
 
-    std::vector<u08> pfs_copy(length);
+    std::vector<u8> pfs_copy(length);
     if (!file.seek(pkgheader.pfs_image_offset)) {
         return false;
     }
     file.readBytes(pfs_copy.data(), length);
 
-    u08* pfs_decrypted = new u08[length];
+    u8* pfs_decrypted = new u8[length];
     // std::memcpy(pfs_decrypted, pfs_copy, 0x10000);  // copy the first 16 blocks "as is", they
     // will retain the pfs header. Not Encrypted.
     // pfs_decrypted[0x1C] = pfs_copy[0x1C] & ~4;	    // remove the "encrypted" flag, no need to
@@ -154,7 +154,7 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
                            0); // Decrypt the pfs_image.
 
     pfscPos = get_pfsc_pos(pfs_decrypted, length);
-    u08* pfsc = new u08[length];
+    u8* pfsc = new u8[length];
     std::memcpy(pfsc, pfs_decrypted + pfscPos, length - pfscPos);
 
     delete[] pfs_decrypted;
@@ -348,8 +348,8 @@ void PKG::extractFiles(const int& index) {
             int sectorOffsetMask = (sectorOffset + pfscPos) & 0xFFFFF000;
             int previousData = (sectorOffset + pfscPos) - sectorOffsetMask;
 
-            u08* pfsc = new u08[pfsc_buf_size];
-            u08* pfs_decrypted = new u08[pfsc_buf_size];
+            u8* pfsc = new u8[pfsc_buf_size];
+            u8* pfs_decrypted = new u8[pfsc_buf_size];
 
             IOFile file; // Open the file for each iteration to avoid conflict.
             if (!file.open(pkgpath)) {

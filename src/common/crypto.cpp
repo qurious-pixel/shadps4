@@ -157,7 +157,7 @@ void Crypto::PfsGenCryptoKey(CryptoPP::byte*& data_tweak_key, CryptoPP::byte*& e
     std::copy(data_tweak_key + 16, data_tweak_key + 32, dataKey);
 }
 
-void Crypto::decryptPFS(CryptoPP::byte* dataKey, CryptoPP::byte* tweakKey, u08* src_image,
+void Crypto::decryptPFS(CryptoPP::byte* dataKey, CryptoPP::byte* tweakKey, u8* src_image,
                         CryptoPP::byte*& dst_image, int length, u64 sector) {
     for (int i = 0; i < length;
          i += 0x1000) { // start at 0x10000 to keep the header when decrypting the whole pfs_image.
