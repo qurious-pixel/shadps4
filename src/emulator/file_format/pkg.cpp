@@ -196,11 +196,10 @@ bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extr
 
     u32 ent_size = 0;
     u32 ndinode = 0;
-    u32 dinodePos = 0;
 
     std::vector<char> compressedData;
     std::vector<char> decompressedData(0x10000);
-
+    bool dinode_reched = false;
     // Get iNdoes.
     for (int i = 0; i < num_blocks; i++) {
         const u64 sectorOffset = sectorMap[i];
@@ -237,49 +236,37 @@ bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extr
         const char dot = decompressedData[0x10];
         const std::string_view dotdot(&decompressedData[0x28], 2);
         if (dot == '.' && dotdot == "..") {
-            dinodePos = i;
-            break;
+            dinode_reched = true;
         }
-    }
 
-    // Get folder and file names.
-    for (int i = dinodePos; i < num_blocks; i++) {
-        const u64 sectorOffset = sectorMap[i];
-        const u64 sectorSize = sectorMap[i + 1] - sectorOffset;
+        // Get folder and file names.
+        if (dinode_reched) {
+            for (int j = 0; j < 0x10000; j += ent_size) { // Skip the first parent and child.
+                Dirent dirent;
+                std::memcpy(&dirent, &decompressedData[j], sizeof(dirent));
 
-        compressedData.resize(sectorSize);
-        std::memcpy(compressedData.data(), pfsc.data() + sectorOffset, sectorSize);
+                // Stop here and continue the main loop
+                if (dirent.ino == 0) {
+                    break;
+                }
 
-        if (sectorSize == 0x10000) // Uncompressed data
-            std::memcpy(decompressedData.data(), compressedData.data(), 0x10000);
-        else if (sectorSize < 0x10000) // Compressed data
-            DecompressPFSC(compressedData, decompressedData);
+                ent_size = dirent.entsize;
 
-        for (int j = 0; j < 0x10000; j += ent_size) { // Skip the first parent and child.
-            Dirent dirent;
-            std::memcpy(&dirent, &decompressedData[j], sizeof(dirent));
+                auto& table = fsTable.emplace_back();
+                table.name = std::string(dirent.name, dirent.namelen);
+                table.inode = dirent.ino;
+                table.type = dirent.type;
 
-            // Stop here and continue the main loop
-            if (dirent.ino == 0) {
+                if (table.type == PFS_DIR) {
+                    folderMap[table.inode] = table.name;
+                }
+            }
+
+            // Seems to be the last entry, at least for the games I tested. To check as we go.
+            const std::string_view rightsprx(&decompressedData[0x40], 10);
+            if (rightsprx == "right.sprx") {
                 break;
             }
-
-            ent_size = dirent.entsize;
-
-            auto& table = fsTable.emplace_back();
-            table.name = std::string(dirent.name, dirent.namelen);
-            table.inode = dirent.ino;
-            table.type = dirent.type;
-
-            if (table.type == PFS_DIR) {
-                folderMap[table.inode] = table.name;
-            }
-        }
-
-        // Seems to be the last entry, at least for the games I tested. To check as we go.
-        const std::string_view rightsprx(&decompressedData[0x40], 10);
-        if (rightsprx == "right.sprx") {
-            break;
         }
     }
 
