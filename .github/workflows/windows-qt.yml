@@ -52,5 +52,5 @@ jobs:
     - name: Upload executable
       uses: actions/upload-artifact@v2
       with:
-        name: shadps4-win64
+        name: shadps4-win64-qt
         path: upload
