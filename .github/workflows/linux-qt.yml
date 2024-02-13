@@ -17,7 +17,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
@@ -27,16 +27,24 @@ jobs:
     - name: Install misc packages
       run: |
        sudo apt-get update && sudo apt install libx11-dev libgl1-mesa-glx mesa-common-dev libfuse2 libwayland-dev
-       sudo add-apt-repository -y ppa:savoury1/qt-6-2
-       sudo apt update
-       sudo apt install qt6-base-dev qt6-base-private-dev
 
     - name: Install newer Clang
       run: |
        wget https://apt.llvm.org/llvm.sh
        chmod +x ./llvm.sh
        sudo ./llvm.sh 17
-       
+    
+    - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version:      6.6.2
+          host:         linux
+          target:       desktop
+          arch:         clang++-17
+          dir:          ${{ runner.temp }}
+          #modules:      qtcharts qt3d
+          #setup-python: false  
+          
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
 
