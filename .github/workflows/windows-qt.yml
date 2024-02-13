@@ -3,7 +3,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Windows
+name: Windows-Qt
 
 on:
   push:
@@ -46,10 +46,11 @@ jobs:
       run: |
         mkdir upload
         move build/Release/shadps4.exe upload
+        move build/Release/zlib-ng2.dll upload
         windeployqt --dir upload upload/shadps4.exe
 
     - name: Upload executable
       uses: actions/upload-artifact@v2
       with:
-        name: shadps4-win64
+        name: shadps4-win64-qt
         path: upload

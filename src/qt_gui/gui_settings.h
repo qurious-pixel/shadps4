@@ -43,7 +43,7 @@ inline QString get_game_list_column_name(game_list_columns col) {
         return "";
     }
 
-    throw std::exception("get_game_list_column_name: Invalid column");
+    throw std::runtime_error("get_game_list_column_name: Invalid column");
 }
 
 const QSize game_list_icon_size_min = QSize(40, 22);

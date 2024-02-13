@@ -1,20 +1,68 @@
-#include "pkg.h"
+#include "common/io_file.h"
+#include "emulator/file_format/pkg_type.h"
+#include "emulator/file_format/pkg.h"
 
-PKG::PKG() {}
+#include <zlib-ng.h>
 
-PKG::~PKG() {}
+static void DecompressPFSC(std::span<const char> compressed_data, std::span<char> decompressed_data) {
+    zng_stream decompressStream;
+    decompressStream.zalloc = Z_NULL;
+    decompressStream.zfree = Z_NULL;
+    decompressStream.opaque = Z_NULL;
 
-bool PKG::open(const std::string& filepath) {
-    IOFile file;
-    if (!file.open(filepath)) {
+    if (zng_inflateInit(&decompressStream) != Z_OK) {
+        // std::cerr << "Error initializing zlib for deflation." << std::endl;
+    }
+
+    decompressStream.avail_in = compressed_data.size();
+    decompressStream.next_in = reinterpret_cast<const Bytef*>(compressed_data.data());
+    decompressStream.avail_out = decompressed_data.size();
+    decompressStream.next_out = reinterpret_cast<Bytef*>(decompressed_data.data());
+
+    if (zng_inflate(&decompressStream, Z_FINISH)) {
+    }
+    if (zng_inflateEnd(&decompressStream) != Z_OK) {
+        // std::cerr << "Error ending zlib inflate" << std::endl;
+    }
+}
+
+u32 GetPFSCOffset(std::span<const u8> pfs_image) {
+    static constexpr u32 PfscMagic = 0x43534650;
+    u32 value;
+    for (u32 i = 0x20000; i < pfs_image.size(); i += 0x10000) {
+        std::memcpy(&value, &pfs_image[i], sizeof(u32));
+        if (value == PfscMagic)
+            return i;
+    }
+    return -1;
+}
+
+std::filesystem::path findDirectory(const std::filesystem::path& rootFolder,
+                                    const std::filesystem::path& targetDirectory) {
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(rootFolder)) {
+        if (std::filesystem::is_directory(entry) &&
+            entry.path().filename() == targetDirectory.filename()) {
+            return entry.path();
+        }
+    }
+    return std::filesystem::path(); // Return an empty path if not found
+}
+
+PKG::PKG() = default;
+
+PKG::~PKG() = default;
+
+bool PKG::Open(const std::string& filepath) {
+    IOFile file(filepath);
+    if (!file.isOpen()) {
         return false;
     }
     pkgSize = file.size().value();
+
     PKGHeader pkgheader;
-    // we have already checked magic should be ok
     file.readBytes(&pkgheader, sizeof(PKGHeader));
 
-    // find title id it is part of pkg_content_id starting at offset 0x40
+    // Find title id it is part of pkg_content_id starting at offset 0x40
     file.seek(0x47); // skip first 7 characters of content_id
     file.readBytes(&pkgTitleID, sizeof(pkgTitleID));
 
@@ -23,16 +71,19 @@ bool PKG::open(const std::string& filepath) {
     return true;
 }
 
-bool PKG::extract(const std::string& filepath, const std::string& extractPath,
-                  std::string& failreason) {
-    this->extractPath = extractPath;
+bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extract, std::string& failreason) {
+    extract_path = extract;
     pkgpath = filepath;
-    IOFile file;
-    if (!file.open(filepath)) {
+    IOFile file(filepath);
+    if (!file.isOpen()) {
         return false;
     }
     pkgSize = file.size().value();
-    file.readBytes(&pkgheader, sizeof(PKGHeader));
+    if (const auto [is_read, num_read] = file.readBytes(&pkgheader, sizeof(PKGHeader));
+        !is_read || num_read != sizeof(PKGHeader)) {
+        failreason = "Could not read PKG header";
+        return false;
+    }
 
     if (pkgheader.pkg_size > pkgSize) {
         failreason = "PKG file size is different";
@@ -43,150 +94,127 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
         return false;
     }
     file.seek(0);
-    pkg = (u08*)mmap(pkgSize, file.getHandle(), 0);
-    if (pkg == nullptr) {
-        failreason = "Can't allocate size for image";
-        return false;
-    }
-
-    file.readBytes(pkg, pkgSize);
+    pkg.resize(pkgheader.pkg_promote_size);
+    file.readBytes(pkg.data(), pkgheader.pkg_promote_size);
 
     u32 offset = pkgheader.pkg_table_entry_offset;
     u32 n_files = pkgheader.pkg_table_entry_count;
 
-    unsigned char seedDigest[32];
-    unsigned char** digest1 = new unsigned char*[7];
-    unsigned char** key1 = new unsigned char*[7];
-    unsigned char* imgkeydata = new unsigned char[256];
-
-    for (int i = 0; i < 7; i++) {
-        digest1[i] = new unsigned char[32];
-        key1[i] = new unsigned char[256];
-    }
+    std::array<u8, 32> seed_digest;
+    std::array<std::array<u8, 32>, 7> digest1;
+    std::array<std::array<u8, 256>, 7> key1;
+    std::array<u8, 256> imgkeydata;
 
     for (int i = 0; i < n_files; i++) {
-        PKGEntry entry = (PKGEntry&)pkg[offset + i * 0x20];
+        PKGEntry entry;
+        std::memcpy(&entry, &pkg[offset + i * 0x20], sizeof(entry));
 
-        // try to figure out the name
-        std::string name = getEntryNameByType(entry.id);
-
-        if (!name.empty()) {
-            QString filepath = QString::fromStdString(extractPath + "/sce_sys/" + name);
-            QDir dir = QFileInfo(filepath).dir();
-            if (!dir.exists()) {
-                dir.mkpath(dir.path());
-            }
-
-            if (entry.id == 0x1) {         // DIGESTS, seek;
-                                           // file.Seek(entry.offset, fsSeekSet);
-            } else if (entry.id == 0x10) { // ENTRY_KEYS, seek;
-                file.seek(entry.offset);
-                file.readBytes(seedDigest, 32);
-
-                for (int i = 0; i < 7; i++)
-                    file.readBytes(digest1[i], 32);
-
-                for (int i = 0; i < 7; i++)
-                    file.readBytes(key1[i], 256);
-
-                PKG::crypto.RSA2048Decrypt(dk3_, key1[3], true); // decrypt DK3
-            } else if (entry.id == 0x20) {                       // IMAGE_KEY, seek; IV_KEY
-                file.seek(entry.offset);
-                file.readBytes(imgkeydata, 256);
-
-                PKGEntry tmp_entry = entry;
-                // WriteBE(tmp_entry);
-                CryptoPP::byte* tmpbuf = tmp_entry.GetBytes(); // get pkgentry bytes
-                CryptoPP::byte* concatenated_ivkey_dk3 = new CryptoPP::byte[32 + 32];
-                concatenate(
-                    tmpbuf, dk3_,
-                    concatenated_ivkey_dk3); // The Concatenated iv + dk3 imagekey for HASH256
-
-                PKG::crypto.ivKeyHASH256(concatenated_ivkey_dk3, ivKey); // ivkey_
-                PKG::crypto.aesCbcCfb128Decrypt(
-                    ivKey, imgkeydata,
-                    imgKey); // imgkey_ to use for last step to get ekpfs
-                PKG::crypto.RSA2048Decrypt(ekpfsKey, imgKey,
-                                           false); // ekpfs key to get data and tweak keys.
-            } else if (entry.id == 0x80) {
-                // GENERAL_DIGESTS, seek;
-                // file.Seek(entry.offset, fsSeekSet);
-            }
-
-            IOFile out;
-            out.open(extractPath + "/sce_sys/" + name, "wb");
-            out.writeBytes(pkg + entry.offset, entry.size);
+        // Try to figure out the name
+        const auto name = GetEntryNameByType(entry.id);
+        if (name.empty()) {
+            // Just print with id
+            IOFile out(extract_path / "sce_sys" / std::to_string(entry.id), "wb");
+            out.writeBytes(pkg.data() + entry.offset, entry.size);
             out.close();
-        } else {
-            // just print with id
-            IOFile out;
-            out.open(extractPath + "/sce_sys/" + std::to_string(entry.id), "wb");
-            out.writeBytes(pkg + entry.offset, entry.size);
-            out.close();
+            continue;
         }
+
+        const auto filepath = extract_path / "sce_sys" / name;
+        std::filesystem::create_directories(filepath.parent_path());
+
+        if (entry.id == 0x1) {         // DIGESTS, seek;
+                                       // file.Seek(entry.offset, fsSeekSet);
+        } else if (entry.id == 0x10) { // ENTRY_KEYS, seek;
+            file.seek(entry.offset);
+            file.readBytes(seed_digest.data(), seed_digest.size());
+
+            for (int i = 0; i < 7; i++) {
+                file.readBytes(digest1[i].data(), digest1[i].size());
+            }
+
+            for (int i = 0; i < 7; i++) {
+                file.readBytes(key1[i].data(), key1[i].size());
+            }
+
+            PKG::crypto.RSA2048Decrypt(dk3_, key1[3], true); // decrypt DK3
+        } else if (entry.id == 0x20) {                       // IMAGE_KEY, seek; IV_KEY
+            file.seek(entry.offset);
+            file.readBytes(imgkeydata.data(), imgkeydata.size());
+
+            // The Concatenated iv + dk3 imagekey for HASH256
+            std::array<CryptoPP::byte, 64> concatenated_ivkey_dk3;
+            std::memcpy(concatenated_ivkey_dk3.data(), &entry, sizeof(entry));
+            std::memcpy(concatenated_ivkey_dk3.data() + sizeof(entry), dk3_.data(), sizeof(dk3_));
+
+            PKG::crypto.ivKeyHASH256(concatenated_ivkey_dk3, ivKey); // ivkey_
+            // imgkey_ to use for last step to get ekpfs
+            PKG::crypto.aesCbcCfb128Decrypt(ivKey, imgkeydata, imgKey);
+            // ekpfs key to get data and tweak keys.
+            PKG::crypto.RSA2048Decrypt(ekpfsKey, imgKey, false);
+        } else if (entry.id == 0x80) {
+            // GENERAL_DIGESTS, seek;
+            // file.Seek(entry.offset, fsSeekSet);
+        }
+
+        IOFile out(extract_path / "sce_sys" / name, "wb");
+        out.writeBytes(pkg.data() + entry.offset, entry.size);
+        out.close();
     }
-    munmap(pkg);
 
-    CryptoPP::byte* seed = new CryptoPP::byte[16];
-
+    // Read the seed
+    std::array<CryptoPP::byte, 16> seed;
     file.seek(pkgheader.pfs_image_offset + 0x370);
-    file.readBytes(seed, 16);
+    file.readBytes(seed.data(), seed.size());
 
     // Get data and tweak keys.
-    PKG::crypto.PfsGenCryptoKey(dataTweakKey, ekpfsKey, seed, dataKey, tweakKey);
+    PKG::crypto.PfsGenCryptoKey(ekpfsKey, seed, dataKey, tweakKey);
+    const u32 length = pkgheader.pfs_cache_size * 0x2; // Seems to be ok.
 
-    delete[] seed;
+    // Read encrypted pfs_image
+    std::vector<u8> pfs_encrypted(length);
+    file.seek(pkgheader.pfs_image_offset);
+    file.readBytes(pfs_encrypted.data(), length);
 
-    int length = pkgheader.pfs_cache_size * 0x2; // Seems to be ok.
+    // Decrypt the pfs_image.
+    std::vector<u8> pfs_decrypted(length);
+    PKG::crypto.decryptPFS(dataKey, tweakKey, pfs_encrypted, pfs_decrypted, 0);
 
-    u08* pfs_copy = (u08*)mmap(length, file.getHandle(), pkgheader.pfs_image_offset);
+    // Retrieve PFSC from decrypted pfs_image.
+    pfsc_offset = GetPFSCOffset(pfs_decrypted);
+    std::vector<u8> pfsc(length);
+    std::memcpy(pfsc.data(), pfs_decrypted.data() + pfsc_offset, length - pfsc_offset);
 
-    u08* pfs_decrypted = new u08[length];
-    // std::memcpy(pfs_decrypted, pfs_copy, 0x10000);  // copy the first 16 blocks "as is", they
-    // will retain the pfs header. Not Encrypted.
-    // pfs_decrypted[0x1C] = pfs_copy[0x1C] & ~4;	    // remove the "encrypted" flag.
+    PFSCHdr pfsChdr;
+    std::memcpy(&pfsChdr, pfsc.data(), sizeof(pfsChdr));
 
-    PKG::crypto.decryptPFS(dataKey, tweakKey, pfs_copy, pfs_decrypted, length,
-                           0); // Decrypt the pfs_image.
-
-    munmap(pfs_copy);
-
-    pfscPos = get_pfsc_pos(pfs_decrypted, length);
-    u08* pfsc = new u08[length];
-    std::memcpy(pfsc, pfs_decrypted + pfscPos, length - pfscPos);
-
-    delete[] pfs_decrypted;
-
-    PFSCHdr pfsChdr = (PFSCHdr&)pfsc[0];
-
-    int num_blocks = (int)(pfsChdr.DataLength / pfsChdr.BlockSz2);
-    sectorMap = new u64[num_blocks + 1]; // 8 bytes, need extra 1 to get the last offset.
+    const int num_blocks = (int)(pfsChdr.data_length / pfsChdr.block_sz2);
+    sectorMap.resize(num_blocks + 1); // 8 bytes, need extra 1 to get the last offset.
 
     for (int i = 0; i < num_blocks + 1; i++) {
-        std::memcpy(&sectorMap[i], pfsc + pfsChdr.BlockOffsets + i * 8, 8);
+        std::memcpy(&sectorMap[i], pfsc.data() + pfsChdr.block_offsets + i * 8, 8);
     }
 
-    int ent_size = 0;
-    int ndinode = 0;
-    int dinodePos = 0;
+    u32 ent_size = 0;
+    u32 ndinode = 0;
 
+    std::vector<char> compressedData;
+    std::vector<char> decompressedData(0x10000);
+    bool dinode_reched = false;
     // Get iNdoes.
     for (int i = 0; i < num_blocks; i++) {
-        u64 sectorOffset = sectorMap[i];
-        u64 sectorSize = sectorMap[i + 1] - sectorOffset;
+        const u64 sectorOffset = sectorMap[i];
+        const u64 sectorSize = sectorMap[i + 1] - sectorOffset;
 
-        char* compressedData = new char[sectorSize];
-        char* decompressedData = new char[0x10000];
-
-        std::memcpy(compressedData, pfsc + sectorOffset, sectorSize);
+        compressedData.resize(sectorSize);
+        std::memcpy(compressedData.data(), pfsc.data() + sectorOffset, sectorSize);
 
         if (sectorSize == 0x10000) // Uncompressed data
-            std::memcpy(decompressedData, compressedData, 0x10000);
+            std::memcpy(decompressedData.data(), compressedData.data(), 0x10000);
         else if (sectorSize < 0x10000) // Compressed data
-            decompress_pfsc(compressedData, sectorSize, decompressedData, 0x10000);
+            DecompressPFSC(compressedData, decompressedData);
 
         if (i == 0) {
-            std::memcpy(&ndinode, decompressedData + 0x30, 4); // number of folders and files
+            std::memcpy(&ndinode, decompressedData.data() + 0x30, 4); // number of folders and files
         }
 
         int occupied_blocks =
@@ -196,127 +224,89 @@ bool PKG::extract(const std::string& filepath, const std::string& extractPath,
 
         if (i >= 1 && i <= occupied_blocks) { // Get all iNodes, gives type, file size and location.
             for (int p = 0; p < 0x10000; p += 0xA8) {
-                Inode tmp = (Inode&)decompressedData[p];
-
-                if (tmp.Mode == 0)
+                Inode node;
+                std::memcpy(&node, &decompressedData[p], sizeof(node));
+                if (node.Mode == 0) {
                     break;
-
-                iNodeBuf.push_back((Inode&)decompressedData[p]);
+                }
+                iNodeBuf.push_back(node);
             }
         }
 
-        std::string dot(&decompressedData[0x10], 1);
-        std::string dotdot(&decompressedData[0x28], 2);
-
-        if (dot == "." && dotdot == "..") {
-            dinodePos = i;
-            delete[] compressedData;
-            delete[] decompressedData;
-            break;
+        const char dot = decompressedData[0x10];
+        const std::string_view dotdot(&decompressedData[0x28], 2);
+        if (dot == '.' && dotdot == "..") {
+            dinode_reched = true;
         }
 
-        delete[] compressedData;
-        delete[] decompressedData;
-    }
+        // Get folder and file names.
+        if (dinode_reched) {
+            for (int j = 0; j < 0x10000; j += ent_size) { // Skip the first parent and child.
+                Dirent dirent;
+                std::memcpy(&dirent, &decompressedData[j], sizeof(dirent));
 
-    // Get folder and file names.
-    for (int i = dinodePos; i < num_blocks; i++) {
-        u64 sectorOffset = sectorMap[i];
-        u64 sectorSize = sectorMap[i + 1] - sectorOffset;
+                // Stop here and continue the main loop
+                if (dirent.ino == 0) {
+                    break;
+                }
 
-        char* compressedData = new char[sectorSize];
-        char* decompressedData = new char[0x10000];
+                ent_size = dirent.entsize;
 
-        std::memcpy(compressedData, pfsc + sectorOffset, sectorSize);
+                auto& table = fsTable.emplace_back();
+                table.name = std::string(dirent.name, dirent.namelen);
+                table.inode = dirent.ino;
+                table.type = dirent.type;
 
-        if (sectorSize == 0x10000) // Uncompressed data
-            std::memcpy(decompressedData, compressedData, 0x10000);
-        else if (sectorSize < 0x10000) // Compressed data
-            decompress_pfsc(compressedData, sectorSize, decompressedData, 0x10000);
+                if (table.type == PFS_DIR) {
+                    folderMap[table.inode] = table.name;
+                }
+            }
 
-        Dirent dirent = (Dirent&)decompressedData[0];
-
-        std::string rightsprx(&decompressedData[0x40], 10);
-
-        for (int j = 0; j < 0x10000; j += ent_size) { // skip the first parent and child.
-            Dirent dirent1 = (Dirent&)decompressedData[j];
-
-            if (dirent1.ino == 0) // stop here and continue the main loop
+            // Seems to be the last entry, at least for the games I tested. To check as we go.
+            const std::string_view rightsprx(&decompressedData[0x40], 10);
+            if (rightsprx == "right.sprx") {
                 break;
-
-            std::string name(dirent1.name, dirent1.namelen);
-            ent_size = dirent1.entsize;
-
-            pfs_fs_table tmp;
-            tmp.name = name;
-            tmp.inode = dirent1.ino;
-            tmp.type = dirent1.type;
-            fsTable.push_back(tmp);
-
-            if (tmp.type == PFS_DIR) {
-                folderMap[tmp.inode] = tmp.name;
             }
         }
-
-        if (rightsprx == "right.sprx") { // Seems to be the last entry, at least for the games I
-                                         // tested. To check as we go.
-            delete[] compressedData;
-            delete[] decompressedData;
-            break;
-        }
-        delete[] compressedData;
-        delete[] decompressedData;
     }
-    delete[] pfsc;
 
     // Create Folders.
-    folderMap[2] = PKG::getTitleID(); // set up game path instead of calling it uroot
-    game_dir_ = QDir::currentPath() + "/game/";
-    gameDir = QDir(game_dir_ + QString(folderMap[2].c_str()));
-    extract_path = gameDir.absolutePath();
+    folderMap[2] = GetTitleID(); // Set up game path instead of calling it uroot
+    game_dir = std::filesystem::current_path() / "game";
+    title_dir = game_dir / GetTitleID();
 
-    PKG::createDirectory(
-        game_dir_ +
-        (folderMap[2].c_str())); // game dir already created but ok let's leave it for now.
+    // Game dir already created but ok let's leave it for now.
+    std::filesystem::create_directories(title_dir);
 
     for (int i = 0; i < fsTable.size(); i++) {
-        int inode_number = fsTable[i].inode;
-        int inode_type = fsTable[i].type;
-        std::string inode_name = fsTable[i].name;
+        const u32 inode_number = fsTable[i].inode;
+        const u32 inode_type = fsTable[i].type;
+        const auto inode_name = fsTable[i].name;
 
         if (inode_type == PFS_CURRENT_DIR) {
-            currentDir = folderMap[inode_number].c_str();
+            current_dir = folderMap[inode_number];
         } else if (inode_type == PFS_PARENT_DIR) {
-            parentDir = folderMap[inode_number].c_str();
-
-            if (i > 1) { // skip uroot folder. we create our own game uid folder
-                QString par_dir;
-
-                if (inode_number == 2) // Check the parent dir first.
-                    par_dir = PKG::findDirectory(QDir(game_dir_), parentDir);
-                else
-                    par_dir = PKG::findDirectory(gameDir, parentDir);
-
-                // Use the checked parent Dir path to check for children dir and avoid using the
-                // game folder as a point of search.
-                QString cur_dir = PKG::findDirectory(QDir(par_dir), currentDir);
+            parent_dir = folderMap[inode_number];
+            // Skip uroot folder. we create our own game uid folder
+            if (i > 1) {
+                const auto par_dir = inode_number == 2 ? findDirectory(game_dir, parent_dir)
+                                                        : findDirectory(title_dir, parent_dir);
+                const auto cur_dir = findDirectory(par_dir, current_dir);
 
                 if (cur_dir == "") {
-                    extract_path = par_dir + QString("/") + (currentDir);
-                    createDirectory(extract_path);
+                    extract_path = par_dir / current_dir;
+                    std::filesystem::create_directories(extract_path);
                 } else {
                     extract_path = cur_dir;
                 }
             }
         }
-        extractMap[inode_number] = extract_path;
+        extractMap[inode_number] = extract_path.string();
     }
     return true;
 }
 
-// Decrypt and Extract pfs_image content.
-void PKG::extractFiles(const int& index) {
-
+void PKG::ExtractFiles(const int& index) {
     int inode_number = fsTable[index].inode;
     int inode_type = fsTable[index].type;
     std::string inode_name = fsTable[index].name;
@@ -325,28 +315,30 @@ void PKG::extractFiles(const int& index) {
         int sector_loc = iNodeBuf[inode_number].loc;
         int nblocks = iNodeBuf[inode_number].Blocks;
         int bsize = iNodeBuf[inode_number].Size;
-        std::string file_extracted = extractMap[inode_number].toStdString() + "/" + inode_name;
+        std::string file_extracted = extractMap[inode_number] + "/" + inode_name;
 
         IOFile inflated;
         inflated.open(file_extracted, "wb");
 
         int size_decompressed = 0;
+        std::vector<char> compressedData;
+        std::vector<char> decompressedData(0x10000);
+
+        u64 pfsc_buf_size = 0x11000; // extra 0x1000
+        std::vector<u8> pfsc(pfsc_buf_size);
+        std::vector<u8> pfs_decrypted(pfsc_buf_size);
 
         for (int j = 0; j < nblocks; j++) {
-            u64 pfsc_buf_size = 0x11000; // extra 0x1000
             u64 sectorOffset =
                 sectorMap[sector_loc + j]; // offset into PFSC_image and not pfs_image.
             u64 sectorSize = sectorMap[sector_loc + j + 1] -
                              sectorOffset; // indicates if data is compressed or not.
-            u64 fileOffset = (pkgheader.pfs_image_offset + pfscPos + sectorOffset);
+            u64 fileOffset = (pkgheader.pfs_image_offset + pfsc_offset + sectorOffset);
             u64 currentSector1 =
-                (pfscPos + sectorOffset) / 0x1000; // block size is 0x1000 for xts decryption.
+                (pfsc_offset + sectorOffset) / 0x1000; // block size is 0x1000 for xts decryption.
 
-            int sectorOffsetMask = (sectorOffset + pfscPos) & 0xFFFFF000;
-            int previousData = (sectorOffset + pfscPos) - sectorOffsetMask;
-
-            u08* pfsc = new u08[pfsc_buf_size];
-            u08* pfs_decrypted = new u08[pfsc_buf_size];
+            int sectorOffsetMask = (sectorOffset + pfsc_offset) & 0xFFFFF000;
+            int previousData = (sectorOffset + pfsc_offset) - sectorOffsetMask;
 
             IOFile file; // Open the file for each iteration to avoid conflict.
             if (!file.open(pkgpath)) {
@@ -354,42 +346,32 @@ void PKG::extractFiles(const int& index) {
             }
 
             file.seek(fileOffset - previousData);
-            file.readBytes(pfsc, pfsc_buf_size);
+            file.readBytes(pfsc.data(), pfsc.size());
 
-            PKG::crypto.decryptPFS(dataKey, tweakKey, pfsc, pfs_decrypted, pfsc_buf_size,
-                                   currentSector1);
+            PKG::crypto.decryptPFS(dataKey, tweakKey, pfsc, pfs_decrypted, currentSector1);
 
-            delete[] pfsc;
-
-            char* compressedData = new char[sectorSize];
-            char* decompressedData = new char[0x10000];
-
-            std::memcpy(compressedData, pfs_decrypted + previousData, sectorSize);
-            delete[] pfs_decrypted;
+            compressedData.resize(sectorSize);
+            std::memcpy(compressedData.data(), pfs_decrypted.data() + previousData, sectorSize);
 
             if (sectorSize == 0x10000) // Uncompressed data
-                std::memcpy(decompressedData, compressedData, 0x10000);
+                std::memcpy(decompressedData.data(), compressedData.data(), 0x10000);
             else if (sectorSize < 0x10000) // Compressed data
-                decompress_pfsc(compressedData, sectorSize, decompressedData, 0x10000);
+                DecompressPFSC(compressedData, decompressedData);
 
             size_decompressed += 0x10000;
 
-            if (j < nblocks - 1)
-                inflated.writeBytes(decompressedData, 0x10000);
-            else
-                inflated.writeBytes(
-                    decompressedData,
-                    0x10000 - (size_decompressed -
-                               bsize)); // This is to remove the zeros at the end of the file.
+            if (j < nblocks - 1) {
+                inflated.writeBytes(decompressedData.data(), decompressedData.size());
+            } else {
+                // This is to remove the zeros at the end of the file.
+                const u32 write_size = decompressedData.size() - (size_decompressed - bsize);
+                inflated.writeBytes(decompressedData.data(), write_size);
+            }
 
-            delete[] compressedData;
-            delete[] decompressedData;
-            file.close();// Close the file for each iteration to avoid conflict.
+            // Close the file for each iteration to avoid conflict.
+            file.close();
         }
         inflated.close();
     }
 }
 
-u32 PKG::getNumberOfFiles() {
-    return fsTable.size();
-}
