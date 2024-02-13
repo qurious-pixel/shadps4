@@ -35,15 +35,15 @@ jobs:
        sudo ./llvm.sh 17
     
     - name: Install Qt
-        uses: jurplel/install-qt-action@v3
-        with:
-          version:      6.6.1
-          host:         linux
-          target:       desktop
-          #arch:         clang++-17
-          dir:          ${{ runner.temp }}
-          #modules:      qtcharts qt3d
-          setup-python: false  
+      uses: jurplel/install-qt-action@v3
+      with:
+        version:      6.6.1
+        host:         linux
+        target:       desktop
+        #arch:         clang++-17
+        dir:          ${{ runner.temp }}
+        #modules:      qtcharts qt3d
+        setup-python: false  
           
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
