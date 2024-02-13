@@ -37,6 +37,17 @@ u32 GetPFSCOffset(std::span<const u8> pfs_image) {
     return -1;
 }
 
+std::filesystem::path findDirectory(const std::filesystem::path& rootFolder,
+                                    const std::filesystem::path& targetDirectory) {
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(rootFolder)) {
+        if (std::filesystem::is_directory(entry) &&
+            entry.path().filename() == targetDirectory.filename()) {
+            return entry.path();
+        }
+    }
+    return std::filesystem::path(); // Return an empty path if not found
+}
+
 PKG::PKG() = default;
 
 PKG::~PKG() = default;
@@ -291,9 +302,16 @@ bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extr
             parent_dir = folderMap[inode_number];
             // Skip uroot folder. we create our own game uid folder
             if (i > 1) {
-                const auto base_dir = inode_number == 2 ? game_dir : title_dir;
-                extract_path = base_dir / parent_dir / current_dir;
-                std::filesystem::create_directories(extract_path);
+                const auto par_dir = inode_number == 2 ? findDirectory(game_dir, parent_dir)
+                                                        : findDirectory(title_dir, parent_dir);
+                const auto cur_dir = findDirectory(par_dir, current_dir);
+
+                if (cur_dir == "") {
+                    extract_path = par_dir / current_dir;
+                    std::filesystem::create_directories(extract_path);
+                } else {
+                    extract_path = cur_dir;
+                }
             }
         }
         extractMap[inode_number] = extract_path.string();
