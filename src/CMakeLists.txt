@@ -56,7 +56,7 @@ set_target_properties(shadps4 PROPERTIES
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 add_custom_command(TARGET shadps4 POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-     "${PROJECT_SOURCE_DIR}/externals/zlib-ng-win/bin/zlib-ng2d.dll" $<TARGET_FILE_DIR:shadps4>)
+     "${PROJECT_SOURCE_DIR}/externals/zlib-ng-win/bin/zlib-ngd2.dll" $<TARGET_FILE_DIR:shadps4>)
 else()
 add_custom_command(TARGET shadps4 POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy_if_different
