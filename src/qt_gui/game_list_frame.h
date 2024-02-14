@@ -48,6 +48,8 @@ private Q_SLOTS:
     void OnHeaderColumnClicked(int col);
     void OnRepaintFinished();
     void OnRefreshFinished();
+    void RequestGameMenu(const QPoint& pos);
+
 Q_SIGNALS:
     void GameListFrameClosed();
     void RequestIconSizeChange(const int& val);
@@ -64,6 +66,7 @@ private:
     void PopulateGameGrid(int maxCols, const QSize& image_size, const QColor& image_color);
     bool SearchMatchesApp(const QString& name, const QString& serial) const;
     bool IsEntryVisible(const game_info& game);
+    static game_info GetGameInfoFromItem(const QTableWidgetItem* item);
 
     // Which widget we are displaying depends on if we are in grid or list mode.
     QMainWindow* m_game_dock = nullptr;

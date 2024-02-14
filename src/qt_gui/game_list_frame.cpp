@@ -1,4 +1,5 @@
 #include <unordered_set>
+#include <QDesktopServices>
 #include <QMainWindow>
 #include <QMenu>
 #include <QPainter>
@@ -140,6 +141,8 @@ game_list_frame::game_list_frame(std::shared_ptr<gui_settings> gui_settings, QWi
         m_game_data.clear();
         m_games.clear();
     });
+    connect(m_game_list, &QTableWidget::customContextMenuRequested, this,
+            &game_list_frame::RequestGameMenu);
 }
 game_list_frame::~game_list_frame() {
     gui::utils::stop_future_watcher(m_repaint_watcher, true);
@@ -166,6 +169,29 @@ void game_list_frame::OnRefreshFinished() {
     m_path_list.clear();
 
     Refresh();
+}
+
+void game_list_frame::RequestGameMenu(const QPoint& pos) {
+
+    QTableWidgetItem* item = m_game_list->item(
+        m_game_list->indexAt(pos).row(), static_cast<int>(gui::game_list_columns::column_icon));
+    QPoint global_pos = m_game_list->viewport()->mapToGlobal(pos);
+    game_info gameinfo = GetGameInfoFromItem(item);
+    // Setup menu.
+    QMenu menu(this);
+    QAction openFolder("Open Game Folder", this);
+
+    menu.addAction(&openFolder);
+    // Show menu.
+    auto selected = menu.exec(global_pos);
+    if (!selected) {
+        return;
+    }
+
+    if (selected == &openFolder) {
+        QString folderPath = QString::fromStdString(gameinfo->info.path);
+        QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath));
+    }
 }
 
 void game_list_frame::OnRepaintFinished() {
@@ -200,6 +226,19 @@ void game_list_frame::OnRepaintFinished() {
 bool game_list_frame::IsEntryVisible(const game_info& game) {
     const QString serial = QString::fromStdString(game->info.serial);
     return SearchMatchesApp(QString::fromStdString(game->info.name), serial);
+}
+
+game_info game_list_frame::GetGameInfoFromItem(const QTableWidgetItem* item) {
+    if (!item) {
+        return nullptr;
+    }
+
+    const QVariant var = item->data(gui::game_role);
+    if (!var.canConvert<game_info>()) {
+        return nullptr;
+    }
+
+    return var.value<game_info>();
 }
 
 void game_list_frame::PopulateGameGrid(int maxCols, const QSize& image_size,
@@ -306,11 +345,10 @@ void game_list_frame::Refresh(const bool from_drive, const bool scroll_after) {
                 game.icon_path = iconpath.toStdString();
                 game.name = psf.GetString("TITLE");
                 game.serial = psf.GetString("TITLE_ID");
-                game.fw =
-                    (QString("%1").arg(psf.GetInteger("SYSTEM_VER"), 8, 16, QLatin1Char('0')))
-                        .mid(1, 3)
-                        .insert(1, '.')
-                        .toStdString();
+                game.fw = (QString("%1").arg(psf.GetInteger("SYSTEM_VER"), 8, 16, QLatin1Char('0')))
+                              .mid(1, 3)
+                              .insert(1, '.')
+                              .toStdString();
                 game.version = psf.GetString("APP_VER");
                 game.category = psf.GetString("CATEGORY");
 
