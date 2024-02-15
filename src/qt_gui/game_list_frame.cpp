@@ -55,7 +55,6 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
     m_game_list->horizontalHeader()->setDefaultSectionSize(150);
     m_game_list->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
     m_game_list->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_game_list->setAlternatingRowColors(true);
     m_game_list->installEventFilter(this);
     m_game_list->setColumnCount(gui::column_count);
 
@@ -650,22 +649,22 @@ void GameListFrame::SortGameList() const {
 
 QPixmap GameListFrame::PaintedPixmap(const QPixmap& icon) const {
     const qreal device_pixel_ratio = devicePixelRatioF();
-    QSize canvas_size(320, 176);
+    QSize canvas_size(512, 512);
     QSize icon_size(icon.size());
     QPoint target_pos;
 
     if (!icon.isNull()) {
-        // Let's upscale the original icon to at least fit into the outer rect of the size of PS3's
+        // Let's upscale the original icon to at least fit into the outer rect of the size of PS4's
         // ICON0.PNG
-        if (icon_size.width() < 320 || icon_size.height() < 176) {
-            icon_size.scale(320, 176, Qt::KeepAspectRatio);
+        if (icon_size.width() < 512 || icon_size.height() < 512) {
+            icon_size.scale(512, 512, Qt::KeepAspectRatio);
         }
 
         canvas_size = icon_size;
 
-        // Calculate the centered size and position of the icon on our canvas.
-        if (icon_size.width() != 320 || icon_size.height() != 176) {
-            constexpr double target_ratio = 320.0 / 176.0; // aspect ratio 20:11
+        // Calculate the centered size and position of the icon on our canvas. not needed I believe.
+        if (icon_size.width() != 512 || icon_size.height() != 512) {
+            constexpr double target_ratio = 1.0; // aspect ratio 20:11
 
             if ((icon_size.width() / static_cast<double>(icon_size.height())) > target_ratio) {
                 canvas_size.setHeight(std::ceil(icon_size.width() / target_ratio));

@@ -46,10 +46,10 @@ inline QString get_game_list_column_name(game_list_columns col) {
     throw std::runtime_error("get_game_list_column_name: Invalid column");
 }
 
-const QSize game_list_icon_size_min = QSize(40, 22);
-const QSize game_list_icon_size_small = QSize(80, 44);
-const QSize game_list_icon_size_medium = QSize(160, 88);
-const QSize game_list_icon_size_max = QSize(320, 176);
+const QSize game_list_icon_size_min = QSize(28, 28);
+const QSize game_list_icon_size_small = QSize(56, 56);
+const QSize game_list_icon_size_medium = QSize(128, 128);
+const QSize game_list_icon_size_max = QSize(256, 256);// let's do 256, 512 is too big (that's what she said)
 
 const int game_list_max_slider_pos = 100;
 
