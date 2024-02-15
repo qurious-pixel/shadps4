@@ -173,10 +173,20 @@ void game_list_frame::OnRefreshFinished() {
 
 void game_list_frame::RequestGameMenu(const QPoint& pos) {
 
-    QTableWidgetItem* item = m_game_list->item(
-        m_game_list->indexAt(pos).row(), static_cast<int>(gui::game_list_columns::column_icon));
-    QPoint global_pos = m_game_list->viewport()->mapToGlobal(pos);
-    game_info gameinfo = GetGameInfoFromItem(item);
+    QPoint global_pos;
+    game_info gameinfo;
+
+    if (m_is_list_layout) {
+        QTableWidgetItem* item = m_game_list->item(
+            m_game_list->indexAt(pos).row(), static_cast<int>(gui::game_list_columns::column_icon));
+        global_pos = m_game_list->viewport()->mapToGlobal(pos);
+        gameinfo = GetGameInfoFromItem(item);
+    }
+
+    if (!gameinfo) {
+        return;
+    }
+
     // Setup menu.
     QMenu menu(this);
     QAction openFolder("Open Game Folder", this);
