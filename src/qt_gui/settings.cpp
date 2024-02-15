@@ -24,7 +24,7 @@ void Settings::RemoveValue(const QString& key, const QString& name) const {
     }
 }
 
-void Settings::RemoveValue(const gui_save& entry) const {
+void Settings::RemoveValue(const GuiSave& entry) const {
     RemoveValue(entry.key, entry.name);
 }
 
@@ -32,7 +32,7 @@ QVariant Settings::GetValue(const QString& key, const QString& name, const QVari
     return m_settings ? m_settings->value(key + "/" + name, def) : def;
 }
 
-QVariant Settings::GetValue(const gui_save& entry) const {
+QVariant Settings::GetValue(const GuiSave& entry) const {
     return GetValue(entry.key, entry.name, entry.def);
 }
 
@@ -51,7 +51,7 @@ q_pair_list Settings::Var2List(const QVariant& var) {
     return list;
 }
 
-void Settings::SetValue(const gui_save& entry, const QVariant& value) const {
+void Settings::SetValue(const GuiSave& entry, const QVariant& value) const {
     if (m_settings) {
         m_settings->beginGroup(entry.key);
         m_settings->setValue(entry.name, value);

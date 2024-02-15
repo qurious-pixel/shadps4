@@ -25,17 +25,17 @@ public:
     QString GetSettingsDir() const;
 
     QVariant GetValue(const QString& key, const QString& name, const QVariant& def) const;
-    QVariant GetValue(const gui_save& entry) const;
+    QVariant GetValue(const GuiSave& entry) const;
     static QVariant List2Var(const q_pair_list& list);
     static q_pair_list Var2List(const QVariant& var);
 
 public Q_SLOTS:
     /** Remove entry */
     void RemoveValue(const QString& key, const QString& name) const;
-    void RemoveValue(const gui_save& entry) const;
+    void RemoveValue(const GuiSave& entry) const;
 
     /** Write value to entry */
-    void SetValue(const gui_save& entry, const QVariant& value) const;
+    void SetValue(const GuiSave& entry, const QVariant& value) const;
     void SetValue(const QString& key, const QVariant& value) const;
     void SetValue(const QString& key, const QString& name, const QVariant& value) const;
 

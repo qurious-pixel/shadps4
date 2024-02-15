@@ -11,7 +11,7 @@
 #include "gui_settings.h"
 #include "qt_utils.h"
 
-GameListFrame::GameListFrame(std::shared_ptr<gui_settings> gui_settings, QWidget* parent)
+GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget* parent)
     : CustomDockWidget(tr("Game List"), parent), m_gui_settings(std::move(gui_settings)) {
     m_icon_size = gui::game_list_icon_size_min; // ensure a valid size
     m_is_list_layout = m_gui_settings->GetValue(gui::game_list_listMode).toBool();
@@ -365,10 +365,10 @@ void GameListFrame::Refresh(const bool from_drive, const bool scroll_after) {
                 m_titles.insert(QString::fromStdString(game.serial),
                                 QString::fromStdString(game.name));
 
-                gui_game_info info{};
+                GuiGameInfo info{};
                 info.info = game;
 
-                m_games.push_back(std::make_shared<gui_game_info>(std::move(info)));
+                m_games.push_back(std::make_shared<GuiGameInfo>(std::move(info)));
             }
         }));
         return;
@@ -718,7 +718,7 @@ void GameListFrame::resizeEvent(QResizeEvent* event) {
 }
 void GameListFrame::ResizeIcons(const int& slider_pos) {
     m_icon_size_index = slider_pos;
-    m_icon_size = gui_settings::SizeFromSlider(slider_pos);
+    m_icon_size = GuiSettings::SizeFromSlider(slider_pos);
 
     RepaintIcons();
 }

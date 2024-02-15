@@ -6,14 +6,14 @@
 #include "game_info.h"
 #include "game_list_item.h"
 
-struct gui_game_info {
+struct GuiGameInfo {
     GameInfo info{};
     QPixmap icon;
     QPixmap pxmap;
     GameListItem* item = nullptr;
 };
 
-typedef std::shared_ptr<gui_game_info> game_info;
+typedef std::shared_ptr<GuiGameInfo> game_info;
 Q_DECLARE_METATYPE(game_info)
 
 class GameListTable : public QTableWidget {

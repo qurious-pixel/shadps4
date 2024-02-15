@@ -16,7 +16,7 @@
 class GameListFrame : public CustomDockWidget {
     Q_OBJECT
 public:
-    explicit GameListFrame(std::shared_ptr<gui_settings> gui_settings, QWidget* parent = nullptr);
+    explicit GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget* parent = nullptr);
     ~GameListFrame();
     /** Fix columns with width smaller than the minimal section size */
     void FixNarrowColumns() const;
@@ -87,7 +87,7 @@ private:
     bool m_old_layout_is_list = true;
 
     // data
-    std::shared_ptr<gui_settings> m_gui_settings;
+    std::shared_ptr<GuiSettings> m_gui_settings;
     QList<game_info> m_game_data;
     std::vector<std::string> m_path_list;
     std::deque<game_info> m_games;
