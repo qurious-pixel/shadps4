@@ -83,7 +83,7 @@ const gui_save game_list_marginFactor = gui_save(game_list, "marginFactor", qrea
 
 } // namespace gui
 
-class gui_settings : public settings {
+class gui_settings : public Settings {
     Q_OBJECT
 
 public:

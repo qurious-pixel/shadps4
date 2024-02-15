@@ -36,7 +36,7 @@ GameListFrame::GameListFrame(std::shared_ptr<gui_settings> gui_settings, QWidget
 
     m_game_grid = new GameListGrid(QSize(), m_icon_color, m_margin_factor, m_text_factor, false);
 
-    m_game_list = new game_list_table();
+    m_game_list = new GameListTable();
     m_game_list->setShowGrid(false);
     m_game_list->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_game_list->setSelectionBehavior(QAbstractItemView::SelectRows);

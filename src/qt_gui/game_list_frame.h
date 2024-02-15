@@ -76,7 +76,7 @@ private:
     GameListGrid* m_game_grid = nullptr;
 
     // Game List
-    game_list_table* m_game_list = nullptr;
+    GameListTable* m_game_list = nullptr;
     QList<QAction*> m_columnActs;
     Qt::SortOrder m_col_sort_order;
     int m_sort_column;

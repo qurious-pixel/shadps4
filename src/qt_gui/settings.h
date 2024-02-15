@@ -15,12 +15,12 @@ typedef QList<q_string_pair> q_pair_list;
 typedef QList<q_size_pair> q_size_list;
 
 // Parent Class for GUI settings
-class settings : public QObject {
+class Settings : public QObject {
     Q_OBJECT
 
 public:
-    explicit settings(QObject* parent = nullptr);
-    ~settings();
+    explicit Settings(QObject* parent = nullptr);
+    ~Settings();
 
     QString GetSettingsDir() const;
 

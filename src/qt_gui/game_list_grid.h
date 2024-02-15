@@ -4,7 +4,7 @@
 
 class GameListGridDelegate;
 
-class GameListGrid : public game_list_table {
+class GameListGrid : public GameListTable {
     Q_OBJECT
 
     QSize m_icon_size;
