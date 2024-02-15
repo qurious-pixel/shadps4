@@ -2,9 +2,9 @@
 
 #include "game_list_table.h"
 
-class game_list_grid_delegate;
+class GameListGridDelegate;
 
-class game_list_grid : public game_list_table {
+class GameListGrid : public GameListTable {
     Q_OBJECT
 
     QSize m_icon_size;
@@ -14,16 +14,16 @@ class game_list_grid : public game_list_table {
     bool m_text_enabled = true;
 
 public:
-    explicit game_list_grid(const QSize& icon_size, QColor icon_color, const qreal& margin_factor,
+    explicit GameListGrid(const QSize& icon_size, QColor icon_color, const qreal& margin_factor,
                             const qreal& text_factor, const bool& showText);
 
     void enableText(const bool& enabled);
     void setIconSize(const QSize& size) const;
-    game_list_item* addItem(const game_info& app, const QString& name, const int& row,
+    GameListItem* addItem(const game_info& app, const QString& name, const int& row,
                             const int& col);
 
     [[nodiscard]] qreal getMarginFactor() const;
 
 private:
-    game_list_grid_delegate* grid_item_delegate;
+    GameListGridDelegate* grid_item_delegate;
 };

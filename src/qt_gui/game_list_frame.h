@@ -13,11 +13,11 @@
 #include "game_list_table.h"
 #include "gui_settings.h"
 
-class game_list_frame : public custom_dock_widget {
+class GameListFrame : public CustomDockWidget {
     Q_OBJECT
 public:
-    explicit game_list_frame(std::shared_ptr<gui_settings> gui_settings, QWidget* parent = nullptr);
-    ~game_list_frame();
+    explicit GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget* parent = nullptr);
+    ~GameListFrame();
     /** Fix columns with width smaller than the minimal section size */
     void FixNarrowColumns() const;
 
@@ -48,6 +48,8 @@ private Q_SLOTS:
     void OnHeaderColumnClicked(int col);
     void OnRepaintFinished();
     void OnRefreshFinished();
+    void RequestGameMenu(const QPoint& pos);
+
 Q_SIGNALS:
     void GameListFrameClosed();
     void RequestIconSizeChange(const int& val);
@@ -64,16 +66,17 @@ private:
     void PopulateGameGrid(int maxCols, const QSize& image_size, const QColor& image_color);
     bool SearchMatchesApp(const QString& name, const QString& serial) const;
     bool IsEntryVisible(const game_info& game);
+    static game_info GetGameInfoFromItem(const QTableWidgetItem* item);
 
     // Which widget we are displaying depends on if we are in grid or list mode.
     QMainWindow* m_game_dock = nullptr;
     QStackedWidget* m_central_widget = nullptr;
 
     // Game Grid
-    game_list_grid* m_game_grid = nullptr;
+    GameListGrid* m_game_grid = nullptr;
 
     // Game List
-    game_list_table* m_game_list = nullptr;
+    GameListTable* m_game_list = nullptr;
     QList<QAction*> m_columnActs;
     Qt::SortOrder m_col_sort_order;
     int m_sort_column;
@@ -84,11 +87,11 @@ private:
     bool m_old_layout_is_list = true;
 
     // data
-    std::shared_ptr<gui_settings> m_gui_settings;
+    std::shared_ptr<GuiSettings> m_gui_settings;
     QList<game_info> m_game_data;
     std::vector<std::string> m_path_list;
     std::deque<game_info> m_games;
-    QFutureWatcher<game_list_item*> m_repaint_watcher;
+    QFutureWatcher<GameListItem*> m_repaint_watcher;
     QFutureWatcher<void> m_refresh_watcher;
 
     // Search

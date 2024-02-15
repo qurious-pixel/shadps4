@@ -1,11 +1,11 @@
 #include "game_list_grid_delegate.h"
 
-game_list_grid_delegate::game_list_grid_delegate(const QSize& size, const qreal& margin_factor,
+GameListGridDelegate::GameListGridDelegate(const QSize& size, const qreal& margin_factor,
                                                  const qreal& text_factor, QObject* parent)
     : QStyledItemDelegate(parent), m_size(size), m_margin_factor(margin_factor),
       m_text_factor(text_factor) {}
 
-void game_list_grid_delegate::initStyleOption(QStyleOptionViewItem* option,
+void GameListGridDelegate::initStyleOption(QStyleOptionViewItem* option,
                                               const QModelIndex& index) const {
     Q_UNUSED(index)
 
@@ -17,7 +17,7 @@ void game_list_grid_delegate::initStyleOption(QStyleOptionViewItem* option,
     QStyledItemDelegate::initStyleOption(option, QModelIndex());
 }
 
-void game_list_grid_delegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
+void GameListGridDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
                                     const QModelIndex& index) const {
     const QRect r = option.rect;
 
@@ -52,13 +52,13 @@ void game_list_grid_delegate::paint(QPainter* painter, const QStyleOptionViewIte
                       title);
 }
 
-QSize game_list_grid_delegate::sizeHint(const QStyleOptionViewItem& option,
+QSize GameListGridDelegate::sizeHint(const QStyleOptionViewItem& option,
                                         const QModelIndex& index) const {
     Q_UNUSED(option)
     Q_UNUSED(index)
     return m_size;
 }
 
-void game_list_grid_delegate::setItemSize(const QSize& size) {
+void GameListGridDelegate::setItemSize(const QSize& size) {
     m_size = size;
 }

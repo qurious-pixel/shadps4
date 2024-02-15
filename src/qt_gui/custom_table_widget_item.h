@@ -4,17 +4,17 @@
 
 #include "game_list_item.h"
 
-class custom_table_widget_item : public game_list_item {
+class CustomTableWidgetItem : public GameListItem {
 private:
     int m_sort_role = Qt::DisplayRole;
 
 public:
     using QTableWidgetItem::setData;
 
-    custom_table_widget_item() = default;
-    custom_table_widget_item(const std::string& text, int sort_role = Qt::DisplayRole,
+    CustomTableWidgetItem() = default;
+    CustomTableWidgetItem(const std::string& text, int sort_role = Qt::DisplayRole,
                              const QVariant& sort_value = 0);
-    custom_table_widget_item(const QString& text, int sort_role = Qt::DisplayRole,
+    CustomTableWidgetItem(const QString& text, int sort_role = Qt::DisplayRole,
                              const QVariant& sort_value = 0);
 
     bool operator<(const QTableWidgetItem& other) const override;

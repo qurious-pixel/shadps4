@@ -8,23 +8,23 @@
 #include "main_window.h"
 #include "ui_main_window.h"
 
-#include "../common/io_file.h"
-#include "../emulator/loader.h"
-#include "../emulator/file_format/pkg.h"
+#include "common/io_file.h"
+#include "emulator/loader.h"
+#include "emulator/file_format/pkg.h"
 
-main_window::main_window(std::shared_ptr<gui_settings> gui_settings, QWidget* parent)
-    : QMainWindow(parent), ui(new Ui::main_window), m_gui_settings(std::move(gui_settings)) {
+MainWindow::MainWindow(std::shared_ptr<GuiSettings> gui_settings, QWidget* parent)
+    : QMainWindow(parent), ui(new Ui::MainWindow), m_gui_settings(std::move(gui_settings)) {
 
     ui->setupUi(this);
 
     setAttribute(Qt::WA_DeleteOnClose);
 }
 
-main_window::~main_window() {
+MainWindow::~MainWindow() {
     SaveWindowState();
 }
 
-bool main_window::Init() {
+bool MainWindow::Init() {
     // add toolbar widgets
     ui->toolBar->setObjectName("mw_toolbar");
     ui->sizeSlider->setRange(0, gui::game_list_max_slider_pos);
@@ -49,7 +49,7 @@ bool main_window::Init() {
     return true;
 }
 
-void main_window::CreateActions() {
+void MainWindow::CreateActions() {
     // create action group for icon size
     m_icon_size_act_group = new QActionGroup(this);
     m_icon_size_act_group->addAction(ui->setIconSizeTinyAct);
@@ -63,11 +63,11 @@ void main_window::CreateActions() {
     m_list_mode_act_group->addAction(ui->setlistModeGridAct);
 }
 
-void main_window::CreateDockWindows() {
+void MainWindow::CreateDockWindows() {
     m_main_window = new QMainWindow();
     m_main_window->setContextMenuPolicy(Qt::PreventContextMenu);
 
-    m_game_list_frame = new game_list_frame(m_gui_settings, m_main_window);
+    m_game_list_frame = new GameListFrame(m_gui_settings, m_main_window);
     m_game_list_frame->setObjectName("gamelist");
 
     m_main_window->addDockWidget(Qt::LeftDockWidgetArea, m_game_list_frame);
@@ -76,14 +76,14 @@ void main_window::CreateDockWindows() {
 
     setCentralWidget(m_main_window);
 
-    connect(m_game_list_frame, &game_list_frame::GameListFrameClosed, this, [this]() {
+    connect(m_game_list_frame, &GameListFrame::GameListFrameClosed, this, [this]() {
         if (ui->showGameListAct->isChecked()) {
             ui->showGameListAct->setChecked(false);
             m_gui_settings->SetValue(gui::main_window_gamelist_visible, false);
         }
     });
 }
-void main_window::CreateConnects() {
+void MainWindow::CreateConnects() {
     connect(ui->exitAct, &QAction::triggered, this, &QWidget::close);
 
     connect(ui->showGameListAct, &QAction::triggered, this, [this](bool checked) {
@@ -111,7 +111,7 @@ void main_window::CreateConnects() {
         m_save_slider_pos = true;
         ResizeIcons(index);
     });
-    connect(m_game_list_frame, &game_list_frame::RequestIconSizeChange, this,
+    connect(m_game_list_frame, &GameListFrame::RequestIconSizeChange, this,
             [this](const int& val) {
                 const int idx = ui->sizeSlider->value() + val;
                 m_save_slider_pos = true;
@@ -131,7 +131,7 @@ void main_window::CreateConnects() {
         m_is_list_mode = is_list_act;
         m_game_list_frame->SetListMode(m_is_list_mode);
     });
-    connect(ui->sizeSlider, &QSlider::valueChanged, this, &main_window::ResizeIcons);
+    connect(ui->sizeSlider, &QSlider::valueChanged, this, &MainWindow::ResizeIcons);
     connect(ui->sizeSlider, &QSlider::sliderReleased, this, [this] {
         const int index = ui->sizeSlider->value();
         m_gui_settings->SetValue(
@@ -148,11 +148,11 @@ void main_window::CreateConnects() {
     });
 
     connect(ui->mw_searchbar, &QLineEdit::textChanged, m_game_list_frame,
-            &game_list_frame::SetSearchText);
+            &GameListFrame::SetSearchText);
     connect(ui->bootInstallPkgAct, &QAction::triggered, this, [this] { InstallPkg(); });
 }
 
-void main_window::SetIconSizeActions(int idx) const {
+void MainWindow::SetIconSizeActions(int idx) const {
     static const int threshold_tiny =
         gui::get_Index((gui::game_list_icon_size_small + gui::game_list_icon_size_min) / 2);
     static const int threshold_small =
@@ -169,7 +169,7 @@ void main_window::SetIconSizeActions(int idx) const {
     else
         ui->setIconSizeLargeAct->setChecked(true);
 }
-void main_window::ResizeIcons(int index) {
+void MainWindow::ResizeIcons(int index) {
     if (ui->sizeSlider->value() != index) {
         ui->sizeSlider->setSliderPosition(index);
         return; // ResizeIcons will be triggered again by setSliderPosition, so return here
@@ -187,7 +187,7 @@ void main_window::ResizeIcons(int index) {
 
     m_game_list_frame->ResizeIcons(index);
 }
-void main_window::ConfigureGuiFromSettings() {
+void MainWindow::ConfigureGuiFromSettings() {
     // Restore GUI state if needed. We need to if they exist.
     if (!restoreGeometry(m_gui_settings->GetValue(gui::main_window_geometry).toByteArray())) {
         resize(QGuiApplication::primaryScreen()->availableSize() * 0.7);
@@ -223,7 +223,7 @@ void main_window::ConfigureGuiFromSettings() {
     m_game_list_frame->LoadSettings();
 }
 
-void main_window::SaveWindowState() const {
+void MainWindow::SaveWindowState() const {
     // Save gui settings
     m_gui_settings->SetValue(gui::main_window_geometry, saveGeometry());
     m_gui_settings->SetValue(gui::main_window_windowState, saveState());
@@ -233,7 +233,7 @@ void main_window::SaveWindowState() const {
     m_game_list_frame->SaveSettings();
 }
 
-void main_window::InstallPkg() {
+void MainWindow::InstallPkg() {
     std::string file(QFileDialog::getOpenFileName(this, tr("Install PKG File"), QDir::currentPath(),
                                                   tr("PKG File (*.PKG)"))
                          .toStdString());

@@ -4,10 +4,9 @@
 #include "game_list_grid_delegate.h"
 #include "game_list_item.h"
 
-game_list_grid::game_list_grid(const QSize& icon_size, QColor icon_color,
-                               const qreal& margin_factor, const qreal& text_factor,
-                               const bool& showText)
-    : game_list_table(), m_icon_size(icon_size), m_icon_color(std::move(icon_color)),
+GameListGrid::GameListGrid(const QSize& icon_size, QColor icon_color, const qreal& margin_factor,
+                           const qreal& text_factor, const bool& showText)
+    : m_icon_size(icon_size), m_icon_color(std::move(icon_color)),
       m_margin_factor(margin_factor), m_text_factor(text_factor), m_text_enabled(showText) {
     setObjectName("game_grid");
 
@@ -20,8 +19,7 @@ game_list_grid::game_list_grid(const QSize& icon_size, QColor icon_color,
         item_size = m_icon_size + m_icon_size * m_margin_factor * 2;
     }
 
-    grid_item_delegate =
-        new game_list_grid_delegate(item_size, m_margin_factor, m_text_factor, this);
+    grid_item_delegate = new GameListGridDelegate(item_size, m_margin_factor, m_text_factor, this);
     setItemDelegate(grid_item_delegate);
     setEditTriggers(QAbstractItemView::NoEditTriggers);
     setSelectionBehavior(QAbstractItemView::SelectItems);
@@ -36,11 +34,11 @@ game_list_grid::game_list_grid(const QSize& icon_size, QColor icon_color,
     setShowGrid(false);
 }
 
-void game_list_grid::enableText(const bool& enabled) {
+void GameListGrid::enableText(const bool& enabled) {
     m_text_enabled = enabled;
 }
 
-void game_list_grid::setIconSize(const QSize& size) const {
+void GameListGrid::setIconSize(const QSize& size) const {
     if (m_text_enabled) {
         grid_item_delegate->setItemSize(
             size + QSize(size.width() * m_margin_factor * 2,
@@ -50,9 +48,9 @@ void game_list_grid::setIconSize(const QSize& size) const {
     }
 }
 
-game_list_item* game_list_grid::addItem(const game_info& app, const QString& name, const int& row,
-                                        const int& col) {
-    game_list_item* item = new game_list_item;
+GameListItem* GameListGrid::addItem(const game_info& app, const QString& name, const int& row,
+                                      const int& col) {
+    GameListItem* item = new GameListItem;
     item->set_icon_func([this, app, item](int) {
         const qreal device_pixel_ratio = devicePixelRatioF();
 
@@ -100,6 +98,6 @@ game_list_item* game_list_grid::addItem(const game_info& app, const QString& nam
     return item;
 }
 
-qreal game_list_grid::getMarginFactor() const {
+qreal GameListGrid::getMarginFactor() const {
     return m_margin_factor;
 }

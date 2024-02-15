@@ -64,35 +64,35 @@ const QString game_list = "GameList";
 
 const QColor game_list_icon_color = QColor(240, 240, 240, 255);
 
-const gui_save main_window_gamelist_visible = gui_save(main_window, "gamelistVisible", true);
-const gui_save main_window_geometry = gui_save(main_window, "geometry", QByteArray());
-const gui_save main_window_windowState = gui_save(main_window, "windowState", QByteArray());
-const gui_save main_window_mwState = gui_save(main_window, "mwState", QByteArray());
+const GuiSave main_window_gamelist_visible = GuiSave(main_window, "gamelistVisible", true);
+const GuiSave main_window_geometry = GuiSave(main_window, "geometry", QByteArray());
+const GuiSave main_window_windowState = GuiSave(main_window, "windowState", QByteArray());
+const GuiSave main_window_mwState = GuiSave(main_window, "mwState", QByteArray());
 
-const gui_save game_list_sortAsc = gui_save(game_list, "sortAsc", true);
-const gui_save game_list_sortCol = gui_save(game_list, "sortCol", 1);
-const gui_save game_list_state = gui_save(game_list, "state", QByteArray());
-const gui_save game_list_iconSize =
-    gui_save(game_list, "iconSize", get_Index(game_list_icon_size_small));
-const gui_save game_list_iconSizeGrid =
-    gui_save(game_list, "iconSizeGrid", get_Index(game_list_icon_size_small));
-const gui_save game_list_iconColor = gui_save(game_list, "iconColor", game_list_icon_color);
-const gui_save game_list_listMode = gui_save(game_list, "listMode", true);
-const gui_save game_list_textFactor = gui_save(game_list, "textFactor", qreal{2.0});
-const gui_save game_list_marginFactor = gui_save(game_list, "marginFactor", qreal{0.09});
+const GuiSave game_list_sortAsc = GuiSave(game_list, "sortAsc", true);
+const GuiSave game_list_sortCol = GuiSave(game_list, "sortCol", 1);
+const GuiSave game_list_state = GuiSave(game_list, "state", QByteArray());
+const GuiSave game_list_iconSize =
+    GuiSave(game_list, "iconSize", get_Index(game_list_icon_size_small));
+const GuiSave game_list_iconSizeGrid =
+    GuiSave(game_list, "iconSizeGrid", get_Index(game_list_icon_size_small));
+const GuiSave game_list_iconColor = GuiSave(game_list, "iconColor", game_list_icon_color);
+const GuiSave game_list_listMode = GuiSave(game_list, "listMode", true);
+const GuiSave game_list_textFactor = GuiSave(game_list, "textFactor", qreal{2.0});
+const GuiSave game_list_marginFactor = GuiSave(game_list, "marginFactor", qreal{0.09});
 
 } // namespace gui
 
-class gui_settings : public settings {
+class GuiSettings : public Settings {
     Q_OBJECT
 
 public:
-    explicit gui_settings(QObject* parent = nullptr);
+    explicit GuiSettings(QObject* parent = nullptr);
 
     bool GetGamelistColVisibility(int col) const;
 
 public Q_SLOTS:
     void SetGamelistColVisibility(int col, bool val) const;
-    static gui_save GetGuiSaveForColumn(int col);
+    static GuiSave GetGuiSaveForColumn(int col);
     static QSize SizeFromSlider(int pos);
 };

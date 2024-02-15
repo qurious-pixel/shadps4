@@ -3,9 +3,9 @@
 #include <QPainter>
 #include <QStyledItemDelegate>
 
-class game_list_grid_delegate : public QStyledItemDelegate {
+class GameListGridDelegate : public QStyledItemDelegate {
 public:
-    game_list_grid_delegate(const QSize& imageSize, const qreal& margin_factor,
+    GameListGridDelegate(const QSize& imageSize, const qreal& margin_factor,
                             const qreal& margin_ratio, QObject* parent = nullptr);
 
     void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const override;

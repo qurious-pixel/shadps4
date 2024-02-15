@@ -7,14 +7,14 @@
 
 using icon_callback_t = std::function<void(int)>;
 
-class game_list_item : public QTableWidgetItem {
+class GameListItem : public QTableWidgetItem {
 public:
-    game_list_item() : QTableWidgetItem() {}
-    game_list_item(const QString& text, int type = Type) : QTableWidgetItem(text, type) {}
-    game_list_item(const QIcon& icon, const QString& text, int type = Type)
+    GameListItem() : QTableWidgetItem() {}
+    GameListItem(const QString& text, int type = Type) : QTableWidgetItem(text, type) {}
+    GameListItem(const QIcon& icon, const QString& text, int type = Type)
         : QTableWidgetItem(icon, text, type) {}
 
-    ~game_list_item() {}
+    ~GameListItem() {}
 
     void call_icon_func() const {
         if (m_icon_callback) {

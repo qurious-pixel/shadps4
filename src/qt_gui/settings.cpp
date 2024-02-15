@@ -1,22 +1,22 @@
 #include "settings.h"
 
-settings::settings(QObject* parent) : QObject(parent), m_settings_dir(ComputeSettingsDir()) {}
+Settings::Settings(QObject* parent) : QObject(parent), m_settings_dir(ComputeSettingsDir()) {}
 
-settings::~settings() {
+Settings::~Settings() {
     if (m_settings) {
         m_settings->sync();
     }
 }
 
-QString settings::GetSettingsDir() const {
+QString Settings::GetSettingsDir() const {
     return m_settings_dir.absolutePath();
 }
 
-QString settings::ComputeSettingsDir() {
+QString Settings::ComputeSettingsDir() {
     return ""; // TODO currently we configure same dir , make it configurable
 }
 
-void settings::RemoveValue(const QString& key, const QString& name) const {
+void Settings::RemoveValue(const QString& key, const QString& name) const {
     if (m_settings) {
         m_settings->beginGroup(key);
         m_settings->remove(name);
@@ -24,26 +24,26 @@ void settings::RemoveValue(const QString& key, const QString& name) const {
     }
 }
 
-void settings::RemoveValue(const gui_save& entry) const {
+void Settings::RemoveValue(const GuiSave& entry) const {
     RemoveValue(entry.key, entry.name);
 }
 
-QVariant settings::GetValue(const QString& key, const QString& name, const QVariant& def) const {
+QVariant Settings::GetValue(const QString& key, const QString& name, const QVariant& def) const {
     return m_settings ? m_settings->value(key + "/" + name, def) : def;
 }
 
-QVariant settings::GetValue(const gui_save& entry) const {
+QVariant Settings::GetValue(const GuiSave& entry) const {
     return GetValue(entry.key, entry.name, entry.def);
 }
 
-QVariant settings::List2Var(const q_pair_list& list) {
+QVariant Settings::List2Var(const q_pair_list& list) {
     QByteArray ba;
     QDataStream stream(&ba, QIODevice::WriteOnly);
     stream << list;
     return QVariant(ba);
 }
 
-q_pair_list settings::Var2List(const QVariant& var) {
+q_pair_list Settings::Var2List(const QVariant& var) {
     q_pair_list list;
     QByteArray ba = var.toByteArray();
     QDataStream stream(&ba, QIODevice::ReadOnly);
@@ -51,7 +51,7 @@ q_pair_list settings::Var2List(const QVariant& var) {
     return list;
 }
 
-void settings::SetValue(const gui_save& entry, const QVariant& value) const {
+void Settings::SetValue(const GuiSave& entry, const QVariant& value) const {
     if (m_settings) {
         m_settings->beginGroup(entry.key);
         m_settings->setValue(entry.name, value);
@@ -59,13 +59,13 @@ void settings::SetValue(const gui_save& entry, const QVariant& value) const {
     }
 }
 
-void settings::SetValue(const QString& key, const QVariant& value) const {
+void Settings::SetValue(const QString& key, const QVariant& value) const {
     if (m_settings) {
         m_settings->setValue(key, value);
     }
 }
 
-void settings::SetValue(const QString& key, const QString& name, const QVariant& value) const {
+void Settings::SetValue(const QString& key, const QString& name, const QVariant& value) const {
     if (m_settings) {
         m_settings->beginGroup(key);
         m_settings->setValue(name, value);
