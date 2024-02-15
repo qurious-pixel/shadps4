@@ -121,15 +121,15 @@ GameListFrame::GameListFrame(std::shared_ptr<gui_settings> gui_settings, QWidget
             });
     connect(m_game_list->horizontalHeader(), &QHeaderView::sectionClicked, this,
             &GameListFrame::OnHeaderColumnClicked);
-    connect(&m_repaint_watcher, &QFutureWatcher<game_list_item*>::resultReadyAt, this,
+    connect(&m_repaint_watcher, &QFutureWatcher<GameListItem*>::resultReadyAt, this,
             [this](int index) {
                 if (!m_is_list_layout)
                     return;
-                if (game_list_item* item = m_repaint_watcher.resultAt(index)) {
+                if (GameListItem* item = m_repaint_watcher.resultAt(index)) {
                     item->call_icon_func();
                 }
             });
-    connect(&m_repaint_watcher, &QFutureWatcher<game_list_item*>::finished, this,
+    connect(&m_repaint_watcher, &QFutureWatcher<GameListItem*>::finished, this,
             &GameListFrame::OnRepaintFinished);
 
     connect(&m_refresh_watcher, &QFutureWatcher<void>::finished, this,
@@ -300,7 +300,7 @@ void GameListFrame::PopulateGameGrid(int maxCols, const QSize& image_size,
         const QString serial = QString::fromStdString(app->info.serial);
         const QString title = m_titles.value(serial, QString::fromStdString(app->info.name));
 
-        game_list_item* item = m_game_grid->addItem(app, title, r, c);
+        GameListItem* item = m_game_grid->addItem(app, title, r, c);
         app->item = item;
         item->setData(gui::game_role, QVariant::fromValue(app));
 
@@ -318,7 +318,7 @@ void GameListFrame::PopulateGameGrid(int maxCols, const QSize& image_size,
 
     if (c != 0) { // if left over games exist -- if empty entries exist
         for (int col = c; col < maxCols; ++col) {
-            game_list_item* empty_item = new game_list_item();
+            GameListItem* empty_item = new GameListItem();
             empty_item->setFlags(Qt::NoItemFlags);
             m_game_grid->setItem(r, col, empty_item);
         }
@@ -516,7 +516,7 @@ void GameListFrame::RepaintIcons(const bool& from_settings) {
         m_game_list->resizeColumnToContents(gui::column_count - 1);
     }
 
-    const std::function func = [this](const game_info& game) -> game_list_item* {
+    const std::function func = [this](const game_info& game) -> GameListItem* {
         if (game->icon.isNull() &&
             (game->info.icon_path.empty() ||
              !game->icon.load(QString::fromStdString(game->info.icon_path)))) {

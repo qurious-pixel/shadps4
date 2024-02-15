@@ -91,7 +91,7 @@ private:
     QList<game_info> m_game_data;
     std::vector<std::string> m_path_list;
     std::deque<game_info> m_games;
-    QFutureWatcher<game_list_item*> m_repaint_watcher;
+    QFutureWatcher<GameListItem*> m_repaint_watcher;
     QFutureWatcher<void> m_refresh_watcher;
 
     // Search

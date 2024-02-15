@@ -2,7 +2,7 @@
 
 #include "game_list_table.h"
 
-class game_list_grid_delegate;
+class GameListGridDelegate;
 
 class GameListGrid : public game_list_table {
     Q_OBJECT
@@ -19,11 +19,11 @@ public:
 
     void enableText(const bool& enabled);
     void setIconSize(const QSize& size) const;
-    game_list_item* addItem(const game_info& app, const QString& name, const int& row,
+    GameListItem* addItem(const game_info& app, const QString& name, const int& row,
                             const int& col);
 
     [[nodiscard]] qreal getMarginFactor() const;
 
 private:
-    game_list_grid_delegate* grid_item_delegate;
+    GameListGridDelegate* grid_item_delegate;
 };

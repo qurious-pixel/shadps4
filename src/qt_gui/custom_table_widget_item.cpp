@@ -4,7 +4,7 @@
 
 CustomTableWidgetItem::CustomTableWidgetItem(const std::string& text, int sort_role,
                                                    const QVariant& sort_value)
-    : game_list_item(
+    : GameListItem(
           QString::fromStdString(text).simplified()) // simplified() forces single line text
 {
     if (sort_role != Qt::DisplayRole) {
@@ -14,7 +14,7 @@ CustomTableWidgetItem::CustomTableWidgetItem(const std::string& text, int sort_r
 
 CustomTableWidgetItem::CustomTableWidgetItem(const QString& text, int sort_role,
                                                    const QVariant& sort_value)
-    : game_list_item(text.simplified()) // simplified() forces single line text
+    : GameListItem(text.simplified()) // simplified() forces single line text
 {
     if (sort_role != Qt::DisplayRole) {
         setData(sort_role, sort_value, true);

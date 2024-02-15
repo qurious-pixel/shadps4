@@ -4,7 +4,7 @@
 
 #include "game_list_item.h"
 
-class CustomTableWidgetItem : public game_list_item {
+class CustomTableWidgetItem : public GameListItem {
 private:
     int m_sort_role = Qt::DisplayRole;
 
