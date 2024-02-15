@@ -6,7 +6,7 @@
 
 GameListGrid::GameListGrid(const QSize& icon_size, QColor icon_color, const qreal& margin_factor,
                            const qreal& text_factor, const bool& showText)
-    : GameListTable(), m_icon_size(icon_size), m_icon_color(std::move(icon_color)),
+    : m_icon_size(icon_size), m_icon_color(std::move(icon_color)),
       m_margin_factor(margin_factor), m_text_factor(text_factor), m_text_enabled(showText) {
     setObjectName("game_grid");
 

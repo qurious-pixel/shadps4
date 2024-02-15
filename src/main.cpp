@@ -5,8 +5,7 @@
 
 int main(int argc, char* argv[]) {
     QApplication a(argc, argv);
-    std::shared_ptr<GuiSettings> m_gui_settings;
-    m_gui_settings.reset(new GuiSettings());
+    auto m_gui_settings = std::make_shared<GuiSettings>();
     MainWindow* m_main_window = new MainWindow(m_gui_settings, nullptr);
     m_main_window->Init();
 
