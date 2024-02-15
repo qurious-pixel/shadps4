@@ -5,8 +5,8 @@
 #include <QPainter>
 #include <QScrollBar>
 
-#include "emulator/file_format/psf.h"
 #include "custom_table_widget_item.h"
+#include "emulator/file_format/psf.h"
 #include "game_list_frame.h"
 #include "gui_settings.h"
 #include "qt_utils.h"
@@ -143,6 +143,8 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
     });
     connect(m_game_list, &QTableWidget::customContextMenuRequested, this,
             &GameListFrame::RequestGameMenu);
+    connect(m_game_grid, &QTableWidget::customContextMenuRequested, this,
+            &GameListFrame::RequestGameMenu);
 }
 GameListFrame::~GameListFrame() {
     gui::utils::stop_future_watcher(m_repaint_watcher, true);
@@ -180,6 +182,11 @@ void GameListFrame::RequestGameMenu(const QPoint& pos) {
         QTableWidgetItem* item = m_game_list->item(
             m_game_list->indexAt(pos).row(), static_cast<int>(gui::game_list_columns::column_icon));
         global_pos = m_game_list->viewport()->mapToGlobal(pos);
+        gameinfo = GetGameInfoFromItem(item);
+    } else {
+        const QModelIndex mi = m_game_grid->indexAt(pos);
+        QTableWidgetItem* item = m_game_grid->item(mi.row(), mi.column());
+        global_pos = m_game_grid->viewport()->mapToGlobal(pos);
         gameinfo = GetGameInfoFromItem(item);
     }
 
@@ -230,6 +237,9 @@ void GameListFrame::OnRepaintFinished() {
         m_central_widget->addWidget(m_game_grid);
         m_central_widget->setCurrentWidget(m_game_grid);
         m_game_grid->verticalScrollBar()->setValue(scroll_position);
+
+        connect(m_game_grid, &QTableWidget::customContextMenuRequested, this,
+                &GameListFrame::RequestGameMenu);
     }
 }
 
@@ -252,7 +262,7 @@ game_info GameListFrame::GetGameInfoFromItem(const QTableWidgetItem* item) {
 }
 
 void GameListFrame::PopulateGameGrid(int maxCols, const QSize& image_size,
-                                       const QColor& image_color) {
+                                     const QColor& image_color) {
     int r = 0;
     int c = 0;
 
@@ -265,8 +275,8 @@ void GameListFrame::PopulateGameGrid(int maxCols, const QSize& image_size,
     const bool show_text = m_icon_size_index > gui::game_list_max_slider_pos * 2 / 5;
 
     if (m_icon_size_index < gui::game_list_max_slider_pos * 2 / 3) {
-        m_game_grid = new GameListGrid(image_size, image_color, m_margin_factor,
-                                         m_text_factor * 2, show_text);
+        m_game_grid = new GameListGrid(image_size, image_color, m_margin_factor, m_text_factor * 2,
+                                       show_text);
     } else {
         m_game_grid =
             new GameListGrid(image_size, image_color, m_margin_factor, m_text_factor, show_text);
@@ -444,8 +454,7 @@ void GameListFrame::PopulateGameList() {
         m_game_list->setItem(row, gui::column_icon, icon_item);
         m_game_list->setItem(row, gui::column_name, title_item);
         m_game_list->setItem(row, gui::column_serial, serial_item);
-        m_game_list->setItem(row, gui::column_firmware,
-                             new CustomTableWidgetItem(game->info.fw));
+        m_game_list->setItem(row, gui::column_firmware, new CustomTableWidgetItem(game->info.fw));
         m_game_list->setItem(row, gui::column_size, new CustomTableWidgetItem(game_size));
         m_game_list->setItem(row, gui::column_version, new CustomTableWidgetItem(app_version));
         m_game_list->setItem(row, gui::column_category,
