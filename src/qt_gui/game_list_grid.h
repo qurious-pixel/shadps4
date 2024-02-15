@@ -4,7 +4,7 @@
 
 class game_list_grid_delegate;
 
-class game_list_grid : public game_list_table {
+class GameListGrid : public game_list_table {
     Q_OBJECT
 
     QSize m_icon_size;
@@ -14,7 +14,7 @@ class game_list_grid : public game_list_table {
     bool m_text_enabled = true;
 
 public:
-    explicit game_list_grid(const QSize& icon_size, QColor icon_color, const qreal& margin_factor,
+    explicit GameListGrid(const QSize& icon_size, QColor icon_color, const qreal& margin_factor,
                             const qreal& text_factor, const bool& showText);
 
     void enableText(const bool& enabled);

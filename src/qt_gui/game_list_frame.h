@@ -73,7 +73,7 @@ private:
     QStackedWidget* m_central_widget = nullptr;
 
     // Game Grid
-    game_list_grid* m_game_grid = nullptr;
+    GameListGrid* m_game_grid = nullptr;
 
     // Game List
     game_list_table* m_game_list = nullptr;

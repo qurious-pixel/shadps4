@@ -34,7 +34,7 @@ GameListFrame::GameListFrame(std::shared_ptr<gui_settings> gui_settings, QWidget
     m_game_dock->setWindowFlags(Qt::Widget);
     setWidget(m_game_dock);
 
-    m_game_grid = new game_list_grid(QSize(), m_icon_color, m_margin_factor, m_text_factor, false);
+    m_game_grid = new GameListGrid(QSize(), m_icon_color, m_margin_factor, m_text_factor, false);
 
     m_game_list = new game_list_table();
     m_game_list->setShowGrid(false);
@@ -265,11 +265,11 @@ void GameListFrame::PopulateGameGrid(int maxCols, const QSize& image_size,
     const bool show_text = m_icon_size_index > gui::game_list_max_slider_pos * 2 / 5;
 
     if (m_icon_size_index < gui::game_list_max_slider_pos * 2 / 3) {
-        m_game_grid = new game_list_grid(image_size, image_color, m_margin_factor,
+        m_game_grid = new GameListGrid(image_size, image_color, m_margin_factor,
                                          m_text_factor * 2, show_text);
     } else {
         m_game_grid =
-            new game_list_grid(image_size, image_color, m_margin_factor, m_text_factor, show_text);
+            new GameListGrid(image_size, image_color, m_margin_factor, m_text_factor, show_text);
     }
 
     // Get list of matching apps

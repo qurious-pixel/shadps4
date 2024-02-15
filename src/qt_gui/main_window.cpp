@@ -8,9 +8,9 @@
 #include "main_window.h"
 #include "ui_main_window.h"
 
-#include "../common/io_file.h"
-#include "../emulator/loader.h"
-#include "../emulator/file_format/pkg.h"
+#include "common/io_file.h"
+#include "emulator/loader.h"
+#include "emulator/file_format/pkg.h"
 
 main_window::main_window(std::shared_ptr<gui_settings> gui_settings, QWidget* parent)
     : QMainWindow(parent), ui(new Ui::main_window), m_gui_settings(std::move(gui_settings)) {
