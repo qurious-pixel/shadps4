@@ -5,14 +5,14 @@
 #include <QPainter>
 #include <QScrollBar>
 
-#include "../emulator/file_format/psf.h"
+#include "emulator/file_format/psf.h"
 #include "custom_table_widget_item.h"
 #include "game_list_frame.h"
 #include "gui_settings.h"
 #include "qt_utils.h"
 
 game_list_frame::game_list_frame(std::shared_ptr<gui_settings> gui_settings, QWidget* parent)
-    : custom_dock_widget(tr("Game List"), parent), m_gui_settings(std::move(gui_settings)) {
+    : CustomDockWidget(tr("Game List"), parent), m_gui_settings(std::move(gui_settings)) {
     m_icon_size = gui::game_list_icon_size_min; // ensure a valid size
     m_is_list_layout = m_gui_settings->GetValue(gui::game_list_listMode).toBool();
     m_margin_factor = m_gui_settings->GetValue(gui::game_list_marginFactor).toReal();
@@ -418,7 +418,7 @@ void game_list_frame::PopulateGameList() {
         const QString title = m_titles.value(serial, QString::fromStdString(game->info.name));
 
         // Icon
-        custom_table_widget_item* icon_item = new custom_table_widget_item;
+        CustomTableWidgetItem* icon_item = new CustomTableWidgetItem;
         game->item = icon_item;
         icon_item->set_icon_func([this, icon_item, game](int) {
             icon_item->setData(Qt::DecorationRole, game->pxmap);
@@ -429,10 +429,10 @@ void game_list_frame::PopulateGameList() {
         icon_item->setData(gui::custom_roles::game_role, QVariant::fromValue(game));
 
         // Title
-        custom_table_widget_item* title_item = new custom_table_widget_item(title);
+        CustomTableWidgetItem* title_item = new CustomTableWidgetItem(title);
 
         // Serial
-        custom_table_widget_item* serial_item = new custom_table_widget_item(serial);
+        CustomTableWidgetItem* serial_item = new CustomTableWidgetItem(serial);
 
         // Version
         QString app_version = QString::fromStdString(game->info.version);
@@ -445,12 +445,12 @@ void game_list_frame::PopulateGameList() {
         m_game_list->setItem(row, gui::column_name, title_item);
         m_game_list->setItem(row, gui::column_serial, serial_item);
         m_game_list->setItem(row, gui::column_firmware,
-                             new custom_table_widget_item(game->info.fw));
-        m_game_list->setItem(row, gui::column_size, new custom_table_widget_item(game_size));
-        m_game_list->setItem(row, gui::column_version, new custom_table_widget_item(app_version));
+                             new CustomTableWidgetItem(game->info.fw));
+        m_game_list->setItem(row, gui::column_size, new CustomTableWidgetItem(game_size));
+        m_game_list->setItem(row, gui::column_version, new CustomTableWidgetItem(app_version));
         m_game_list->setItem(row, gui::column_category,
-                             new custom_table_widget_item(game->info.category));
-        m_game_list->setItem(row, gui::column_path, new custom_table_widget_item(game->info.path));
+                             new CustomTableWidgetItem(game->info.category));
+        m_game_list->setItem(row, gui::column_path, new CustomTableWidgetItem(game->info.path));
 
         if (selected_item == game->info.path + game->info.icon_path) {
             selected_row = row;

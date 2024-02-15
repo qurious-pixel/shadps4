@@ -13,7 +13,7 @@
 #include "game_list_table.h"
 #include "gui_settings.h"
 
-class game_list_frame : public custom_dock_widget {
+class game_list_frame : public CustomDockWidget {
     Q_OBJECT
 public:
     explicit game_list_frame(std::shared_ptr<gui_settings> gui_settings, QWidget* parent = nullptr);

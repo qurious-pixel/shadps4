@@ -4,13 +4,13 @@
 #include <QPainter>
 #include <QStyleOption>
 
-class custom_dock_widget : public QDockWidget {
+class CustomDockWidget : public QDockWidget {
 private:
     std::shared_ptr<QWidget> m_title_bar_widget;
     bool m_is_title_bar_visible = true;
 
 public:
-    explicit custom_dock_widget(const QString& title, QWidget* parent = Q_NULLPTR,
+    explicit CustomDockWidget(const QString& title, QWidget* parent = Q_NULLPTR,
                                 Qt::WindowFlags flags = Qt::WindowFlags())
         : QDockWidget(title, parent, flags) {
         m_title_bar_widget.reset(titleBarWidget());

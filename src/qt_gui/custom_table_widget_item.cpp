@@ -2,7 +2,7 @@
 
 #include <QDateTime>
 
-custom_table_widget_item::custom_table_widget_item(const std::string& text, int sort_role,
+CustomTableWidgetItem::CustomTableWidgetItem(const std::string& text, int sort_role,
                                                    const QVariant& sort_value)
     : game_list_item(
           QString::fromStdString(text).simplified()) // simplified() forces single line text
@@ -12,7 +12,7 @@ custom_table_widget_item::custom_table_widget_item(const std::string& text, int 
     }
 }
 
-custom_table_widget_item::custom_table_widget_item(const QString& text, int sort_role,
+CustomTableWidgetItem::CustomTableWidgetItem(const QString& text, int sort_role,
                                                    const QVariant& sort_value)
     : game_list_item(text.simplified()) // simplified() forces single line text
 {
@@ -21,7 +21,7 @@ custom_table_widget_item::custom_table_widget_item(const QString& text, int sort
     }
 }
 
-bool custom_table_widget_item::operator<(const QTableWidgetItem& other) const {
+bool CustomTableWidgetItem::operator<(const QTableWidgetItem& other) const {
     if (m_sort_role == Qt::DisplayRole) {
         return QTableWidgetItem::operator<(other);
     }
@@ -57,7 +57,7 @@ bool custom_table_widget_item::operator<(const QTableWidgetItem& other) const {
     }
 }
 
-void custom_table_widget_item::setData(int role, const QVariant& value, bool assign_sort_role) {
+void CustomTableWidgetItem::setData(int role, const QVariant& value, bool assign_sort_role) {
     if (assign_sort_role) {
         m_sort_role = role;
     }
