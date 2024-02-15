@@ -4,7 +4,7 @@
 #include <QMainWindow>
 
 class gui_settings;
-class game_list_frame;
+class GameListFrame;
 
 namespace Ui {
 class main_window;
@@ -41,7 +41,7 @@ private:
 
     // Dockable widget frames
     QMainWindow* m_main_window = nullptr;
-    game_list_frame* m_game_list_frame = nullptr;
+    GameListFrame* m_game_list_frame = nullptr;
 
     std::shared_ptr<gui_settings> m_gui_settings;
 };

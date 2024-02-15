@@ -67,7 +67,7 @@ void main_window::CreateDockWindows() {
     m_main_window = new QMainWindow();
     m_main_window->setContextMenuPolicy(Qt::PreventContextMenu);
 
-    m_game_list_frame = new game_list_frame(m_gui_settings, m_main_window);
+    m_game_list_frame = new GameListFrame(m_gui_settings, m_main_window);
     m_game_list_frame->setObjectName("gamelist");
 
     m_main_window->addDockWidget(Qt::LeftDockWidgetArea, m_game_list_frame);
@@ -76,7 +76,7 @@ void main_window::CreateDockWindows() {
 
     setCentralWidget(m_main_window);
 
-    connect(m_game_list_frame, &game_list_frame::GameListFrameClosed, this, [this]() {
+    connect(m_game_list_frame, &GameListFrame::GameListFrameClosed, this, [this]() {
         if (ui->showGameListAct->isChecked()) {
             ui->showGameListAct->setChecked(false);
             m_gui_settings->SetValue(gui::main_window_gamelist_visible, false);
@@ -111,7 +111,7 @@ void main_window::CreateConnects() {
         m_save_slider_pos = true;
         ResizeIcons(index);
     });
-    connect(m_game_list_frame, &game_list_frame::RequestIconSizeChange, this,
+    connect(m_game_list_frame, &GameListFrame::RequestIconSizeChange, this,
             [this](const int& val) {
                 const int idx = ui->sizeSlider->value() + val;
                 m_save_slider_pos = true;
@@ -148,7 +148,7 @@ void main_window::CreateConnects() {
     });
 
     connect(ui->mw_searchbar, &QLineEdit::textChanged, m_game_list_frame,
-            &game_list_frame::SetSearchText);
+            &GameListFrame::SetSearchText);
     connect(ui->bootInstallPkgAct, &QAction::triggered, this, [this] { InstallPkg(); });
 }
 

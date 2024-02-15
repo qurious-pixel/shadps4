@@ -11,7 +11,7 @@
 #include "gui_settings.h"
 #include "qt_utils.h"
 
-game_list_frame::game_list_frame(std::shared_ptr<gui_settings> gui_settings, QWidget* parent)
+GameListFrame::GameListFrame(std::shared_ptr<gui_settings> gui_settings, QWidget* parent)
     : CustomDockWidget(tr("Game List"), parent), m_gui_settings(std::move(gui_settings)) {
     m_icon_size = gui::game_list_icon_size_min; // ensure a valid size
     m_is_list_layout = m_gui_settings->GetValue(gui::game_list_listMode).toBool();
@@ -120,7 +120,7 @@ game_list_frame::game_list_frame(std::shared_ptr<gui_settings> gui_settings, QWi
                 configure->exec(m_game_list->horizontalHeader()->viewport()->mapToGlobal(pos));
             });
     connect(m_game_list->horizontalHeader(), &QHeaderView::sectionClicked, this,
-            &game_list_frame::OnHeaderColumnClicked);
+            &GameListFrame::OnHeaderColumnClicked);
     connect(&m_repaint_watcher, &QFutureWatcher<game_list_item*>::resultReadyAt, this,
             [this](int index) {
                 if (!m_is_list_layout)
@@ -130,10 +130,10 @@ game_list_frame::game_list_frame(std::shared_ptr<gui_settings> gui_settings, QWi
                 }
             });
     connect(&m_repaint_watcher, &QFutureWatcher<game_list_item*>::finished, this,
-            &game_list_frame::OnRepaintFinished);
+            &GameListFrame::OnRepaintFinished);
 
     connect(&m_refresh_watcher, &QFutureWatcher<void>::finished, this,
-            &game_list_frame::OnRefreshFinished);
+            &GameListFrame::OnRefreshFinished);
     connect(&m_refresh_watcher, &QFutureWatcher<void>::canceled, this, [this]() {
         gui::utils::stop_future_watcher(m_repaint_watcher, true);
 
@@ -142,15 +142,15 @@ game_list_frame::game_list_frame(std::shared_ptr<gui_settings> gui_settings, QWi
         m_games.clear();
     });
     connect(m_game_list, &QTableWidget::customContextMenuRequested, this,
-            &game_list_frame::RequestGameMenu);
+            &GameListFrame::RequestGameMenu);
 }
-game_list_frame::~game_list_frame() {
+GameListFrame::~GameListFrame() {
     gui::utils::stop_future_watcher(m_repaint_watcher, true);
     gui::utils::stop_future_watcher(m_refresh_watcher, true);
     SaveSettings();
 }
 
-void game_list_frame::OnRefreshFinished() {
+void GameListFrame::OnRefreshFinished() {
     gui::utils::stop_future_watcher(m_repaint_watcher, true);
     for (auto&& g : m_games) {
         m_game_data.push_back(g);
@@ -171,7 +171,7 @@ void game_list_frame::OnRefreshFinished() {
     Refresh();
 }
 
-void game_list_frame::RequestGameMenu(const QPoint& pos) {
+void GameListFrame::RequestGameMenu(const QPoint& pos) {
 
     QPoint global_pos;
     game_info gameinfo;
@@ -204,7 +204,7 @@ void game_list_frame::RequestGameMenu(const QPoint& pos) {
     }
 }
 
-void game_list_frame::OnRepaintFinished() {
+void GameListFrame::OnRepaintFinished() {
     if (m_is_list_layout) {
         // Fixate vertical header and row height
         m_game_list->verticalHeader()->setMinimumSectionSize(m_icon_size.height());
@@ -233,12 +233,12 @@ void game_list_frame::OnRepaintFinished() {
     }
 }
 
-bool game_list_frame::IsEntryVisible(const game_info& game) {
+bool GameListFrame::IsEntryVisible(const game_info& game) {
     const QString serial = QString::fromStdString(game->info.serial);
     return SearchMatchesApp(QString::fromStdString(game->info.name), serial);
 }
 
-game_info game_list_frame::GetGameInfoFromItem(const QTableWidgetItem* item) {
+game_info GameListFrame::GetGameInfoFromItem(const QTableWidgetItem* item) {
     if (!item) {
         return nullptr;
     }
@@ -251,7 +251,7 @@ game_info game_list_frame::GetGameInfoFromItem(const QTableWidgetItem* item) {
     return var.value<game_info>();
 }
 
-void game_list_frame::PopulateGameGrid(int maxCols, const QSize& image_size,
+void GameListFrame::PopulateGameGrid(int maxCols, const QSize& image_size,
                                        const QColor& image_color) {
     int r = 0;
     int c = 0;
@@ -329,7 +329,7 @@ void game_list_frame::PopulateGameGrid(int maxCols, const QSize& image_size,
     m_game_grid->installEventFilter(this);
     m_game_grid->verticalScrollBar()->installEventFilter(this);
 }
-void game_list_frame::Refresh(const bool from_drive, const bool scroll_after) {
+void GameListFrame::Refresh(const bool from_drive, const bool scroll_after) {
     gui::utils::stop_future_watcher(m_repaint_watcher, true);
     gui::utils::stop_future_watcher(m_refresh_watcher, from_drive);
 
@@ -393,7 +393,7 @@ void game_list_frame::Refresh(const bool from_drive, const bool scroll_after) {
 /**
  Cleans and readds entries to table widget in UI.
 */
-void game_list_frame::PopulateGameList() {
+void GameListFrame::PopulateGameList() {
     int selected_row = -1;
 
     const std::string selected_item = CurrentSelectionPath();
@@ -462,7 +462,7 @@ void game_list_frame::PopulateGameList() {
     m_game_list->selectRow(selected_row);
 }
 
-std::string game_list_frame::CurrentSelectionPath() {
+std::string GameListFrame::CurrentSelectionPath() {
     std::string selection;
 
     QTableWidgetItem* item = nullptr;
@@ -490,7 +490,7 @@ std::string game_list_frame::CurrentSelectionPath() {
     return selection;
 }
 
-void game_list_frame::RepaintIcons(const bool& from_settings) {
+void GameListFrame::RepaintIcons(const bool& from_settings) {
     gui::utils::stop_future_watcher(m_repaint_watcher, true);
 
     if (from_settings) {
@@ -528,7 +528,7 @@ void game_list_frame::RepaintIcons(const bool& from_settings) {
     m_repaint_watcher.setFuture(QtConcurrent::mapped(m_game_data, func));
 }
 
-void game_list_frame::FixNarrowColumns() const {
+void GameListFrame::FixNarrowColumns() const {
     qApp->processEvents();
 
     // handle columns (other than the icon column) that have zero width after showing them (stuck
@@ -545,7 +545,7 @@ void game_list_frame::FixNarrowColumns() const {
     }
 }
 
-void game_list_frame::ResizeColumnsToContents(int spacing) const {
+void GameListFrame::ResizeColumnsToContents(int spacing) const {
     if (!m_game_list) {
         return;
     }
@@ -564,7 +564,7 @@ void game_list_frame::ResizeColumnsToContents(int spacing) const {
     }
 }
 
-void game_list_frame::OnHeaderColumnClicked(int col) {
+void GameListFrame::OnHeaderColumnClicked(int col) {
     if (col == 0)
         return; // Don't "sort" icons.
 
@@ -582,7 +582,7 @@ void game_list_frame::OnHeaderColumnClicked(int col) {
     SortGameList();
 }
 
-void game_list_frame::SortGameList() const {
+void GameListFrame::SortGameList() const {
     // Back-up old header sizes to handle unwanted column resize in case of zero search results
     QList<int> column_widths;
     const int old_row_count = m_game_list->rowCount();
@@ -639,7 +639,7 @@ void game_list_frame::SortGameList() const {
     m_game_list->resizeColumnToContents(gui::column_count - 1);
 }
 
-QPixmap game_list_frame::PaintedPixmap(const QPixmap& icon) const {
+QPixmap GameListFrame::PaintedPixmap(const QPixmap& icon) const {
     const qreal device_pixel_ratio = devicePixelRatioF();
     QSize canvas_size(320, 176);
     QSize icon_size(icon.size());
@@ -691,7 +691,7 @@ QPixmap game_list_frame::PaintedPixmap(const QPixmap& icon) const {
     return canvas.scaled(m_icon_size * device_pixel_ratio, Qt::KeepAspectRatio,
                          Qt::TransformationMode::SmoothTransformation);
 }
-void game_list_frame::SetListMode(const bool& is_list) {
+void GameListFrame::SetListMode(const bool& is_list) {
     m_old_layout_is_list = m_is_list_layout;
     m_is_list_layout = is_list;
 
@@ -701,29 +701,29 @@ void game_list_frame::SetListMode(const bool& is_list) {
 
     m_central_widget->setCurrentWidget(m_is_list_layout ? m_game_list : m_game_grid);
 }
-void game_list_frame::SetSearchText(const QString& text) {
+void GameListFrame::SetSearchText(const QString& text) {
     m_search_text = text;
     Refresh();
 }
-void game_list_frame::closeEvent(QCloseEvent* event) {
+void GameListFrame::closeEvent(QCloseEvent* event) {
     QDockWidget::closeEvent(event);
     Q_EMIT GameListFrameClosed();
 }
 
-void game_list_frame::resizeEvent(QResizeEvent* event) {
+void GameListFrame::resizeEvent(QResizeEvent* event) {
     if (!m_is_list_layout) {
         Refresh(false, m_game_grid->selectedItems().count());
     }
     QDockWidget::resizeEvent(event);
 }
-void game_list_frame::ResizeIcons(const int& slider_pos) {
+void GameListFrame::ResizeIcons(const int& slider_pos) {
     m_icon_size_index = slider_pos;
     m_icon_size = gui_settings::SizeFromSlider(slider_pos);
 
     RepaintIcons();
 }
 
-void game_list_frame::LoadSettings() {
+void GameListFrame::LoadSettings() {
     m_col_sort_order = m_gui_settings->GetValue(gui::game_list_sortAsc).toBool()
                            ? Qt::AscendingOrder
                            : Qt::DescendingOrder;
@@ -748,7 +748,7 @@ void game_list_frame::LoadSettings() {
     m_game_list->horizontalHeader()->restoreState(m_game_list->horizontalHeader()->saveState());
 }
 
-void game_list_frame::SaveSettings() {
+void GameListFrame::SaveSettings() {
     for (int col = 0; col < m_columnActs.count(); ++col) {
         m_gui_settings->SetGamelistColVisibility(col, m_columnActs[col]->isChecked());
     }
@@ -760,7 +760,7 @@ void game_list_frame::SaveSettings() {
 /**
  * Returns false if the game should be hidden because it doesn't match search term in toolbar.
  */
-bool game_list_frame::SearchMatchesApp(const QString& name, const QString& serial) const {
+bool GameListFrame::SearchMatchesApp(const QString& name, const QString& serial) const {
     if (!m_search_text.isEmpty()) {
         const QString search_text = m_search_text.toLower();
         return m_titles.value(serial, name).toLower().contains(search_text) ||
