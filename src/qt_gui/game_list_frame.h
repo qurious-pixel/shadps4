@@ -6,6 +6,9 @@
 #include <QStackedWidget>
 #include <QWidget>
 #include <QtConcurrent>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QGraphicsBlurEffect>
 
 #include "custom_dock_widget.h"
 #include "game_list_grid.h"
@@ -49,10 +52,12 @@ private Q_SLOTS:
     void OnRepaintFinished();
     void OnRefreshFinished();
     void RequestGameMenu(const QPoint& pos);
+    void SetBackgroundImage(QTableWidgetItem* item);
 
 Q_SIGNALS:
     void GameListFrameClosed();
     void RequestIconSizeChange(const int& val);
+    void ResizedWindow(QTableWidgetItem* item);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -137,5 +142,96 @@ private:
         }
 
         return formatSize(total);
+    }
+
+    void setTableItem(GameListTable* game_list, int row, int column, QString itemStr) {
+        QWidget* widget = new QWidget();
+        QVBoxLayout* layout = new QVBoxLayout();
+        QLabel* label = new QLabel(itemStr);
+        QTableWidgetItem* item = new QTableWidgetItem();
+
+        label->setStyleSheet("color: white; font-size: 15px; font-weight: bold;");
+
+        // Create shadow effect
+        QGraphicsDropShadowEffect* shadowEffect = new QGraphicsDropShadowEffect();
+        shadowEffect->setBlurRadius(5);               // Set the blur radius of the shadow
+        shadowEffect->setColor(QColor(0, 0, 0, 160)); // Set the color and opacity of the shadow
+        shadowEffect->setOffset(2, 2);                // Set the offset of the shadow
+
+        label->setGraphicsEffect(shadowEffect); // Apply shadow effect to the QLabel
+
+        layout->addWidget(label);
+        widget->setLayout(layout);
+
+        game_list->setItem(row, column, item);
+        game_list->setCellWidget(row, column, widget);
+    }
+
+    QImage blurImage(const QImage& image, const QRect& rect, int radius) {
+        int tab[] = {14, 10, 8, 6, 5, 5, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2};
+        int alpha = (radius < 1) ? 16 : (radius > 17) ? 1 : tab[radius - 1];
+
+        QImage result = image.convertToFormat(QImage::Format_ARGB32);
+        int r1 = rect.top();
+        int r2 = rect.bottom();
+        int c1 = rect.left();
+        int c2 = rect.right();
+
+        int bpl = result.bytesPerLine();
+        int rgba[4];
+        unsigned char* p;
+
+        int i1 = 0;
+        int i2 = 3;
+
+        const int i2Minusi1 = i2 - i1;
+        const int i1Shifted = i1 << 4;
+        const int alphaOver16 = alpha / 16;
+
+        for (int col = c1; col <= c2; col++) {
+            p = result.scanLine(r1) + col * 4;
+            for (int i = i1; i <= i2; i++)
+                rgba[i] = p[i] << 4;
+
+            p += bpl;
+            for (int j = r1; j < r2; j++, p += bpl)
+                for (int i = i1; i <= i2; i++)
+                    p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+        }
+
+        for (int row = r1; row <= r2; row++) {
+            p = result.scanLine(row) + c1 * 4;
+            for (int i = i1; i <= i2; i++)
+                rgba[i] = p[i] << 4;
+
+            p += 4;
+            for (int j = c1; j < c2; j++, p += 4)
+                for (int i = i1; i <= i2; i++)
+                    p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+        }
+
+        for (int col = c1; col <= c2; col++) {
+            p = result.scanLine(r2) + col * 4;
+            for (int i = i1; i <= i2; i++)
+                rgba[i] = p[i] << 4;
+
+            p -= bpl;
+            for (int j = r1; j < r2; j++, p -= bpl)
+                for (int i = i1; i <= i2; i++)
+                    p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+        }
+
+        for (int row = r1; row <= r2; row++) {
+            p = result.scanLine(row) + c2 * 4;
+            for (int i = i1; i <= i2; i++)
+                rgba[i] = p[i] << 4;
+
+            p -= 4;
+            for (int j = c1; j < c2; j++, p -= 4)
+                for (int i = i1; i <= i2; i++)
+                    p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+        }
+
+        return result;
     }
 };
