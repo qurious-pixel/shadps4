@@ -2,6 +2,8 @@
 
 #include <QActionGroup>
 #include <QMainWindow>
+#include <QDragEnterEvent>
+#include <QMimeData>
 
 class GuiSettings;
 class GameListFrame;
@@ -24,6 +26,7 @@ public:
     ~MainWindow();
     bool Init();
     void InstallPkg();
+    void InstallDragDropPkg(std::string file, int pkgNum, int nPkg);
 
 private Q_SLOTS:
     void ConfigureGuiFromSettings();
@@ -44,4 +47,25 @@ private:
     GameListFrame* m_game_list_frame = nullptr;
 
     std::shared_ptr<GuiSettings> m_gui_settings;
+
+ protected:
+    void dragEnterEvent(QDragEnterEvent* event1) override {
+        if (event1->mimeData()->hasUrls()) {
+            event1->acceptProposedAction();
+        }
+    }
+
+    void dropEvent(QDropEvent* event1) override {
+        const QMimeData* mimeData = event1->mimeData();
+        if (mimeData->hasUrls()) {
+            QList<QUrl> urlList = mimeData->urls();
+            int pkgNum = 0;
+            int nPkg = urlList.size();
+            for (const QUrl& url : urlList) {
+                pkgNum++;
+                InstallDragDropPkg(url.toLocalFile().toStdString(), pkgNum, nPkg);
+                 
+            } 
+        }
+    }
 };

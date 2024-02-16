@@ -234,9 +234,18 @@ void MainWindow::SaveWindowState() const {
 }
 
 void MainWindow::InstallPkg() {
-    std::string file(QFileDialog::getOpenFileName(this, tr("Install PKG File"), QDir::currentPath(),
-                                                  tr("PKG File (*.PKG)"))
-                         .toStdString());
+    QStringList fileNames = QFileDialog::getOpenFileNames(
+        this, tr("Install PKG Files"), QDir::currentPath(), tr("PKG File (*.PKG)"));
+    int nPkg = fileNames.size();
+    int pkgNum = 0;
+    for (const QString& file : fileNames) {
+        pkgNum++;
+        MainWindow::InstallDragDropPkg(file.toStdString(), pkgNum, nPkg);
+    }
+}
+
+void MainWindow::InstallDragDropPkg(std::string file, int pkgNum, int nPkg) {
+
     if (detectFileType(file) == FILETYPE_PKG) {
         PKG pkg;
         pkg.Open(file);
@@ -255,7 +264,8 @@ void MainWindow::InstallPkg() {
 
             QProgressDialog dialog;
             dialog.setWindowTitle("PKG Extraction");
-            dialog.setLabelText("Extracting PKG please wait");
+            QString extractmsg = QString("Extracting PKG %1/%2").arg(pkgNum).arg(nPkg);
+            dialog.setLabelText(extractmsg);
 
             // Create a QFutureWatcher and connect signals and slots.
             QFutureWatcher<void> futureWatcher;
@@ -273,13 +283,14 @@ void MainWindow::InstallPkg() {
             dialog.exec();
             futureWatcher.waitForFinished();
 
-            auto path = QString::fromStdString(extract_path.string());
-            QMessageBox::information(this, "Extraction Finished",
-                                     "Game successfully installed at " + path, QMessageBox::Ok,
-                                     0);
-            m_game_list_frame->Refresh(true);
+            auto path = QDir::currentPath() + "/game";
+            if (pkgNum == nPkg) {
+                QMessageBox::information(this, "Extraction Finished",
+                                         "Game successfully installed at " + path, QMessageBox::Ok,
+                                         0);
+                m_game_list_frame->Refresh(true);
+            }
         }
-
     } else {
         QMessageBox::critical(this, "PKG ERROR", "File doesn't appear to be a valid PKG file",
                               QMessageBox::Ok, 0);
