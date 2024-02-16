@@ -7,7 +7,7 @@
 #include "gui_settings.h"
 #include "main_window.h"
 #include "ui_main_window.h"
-
+#include "game_install_dialog.h"
 #include "common/io_file.h"
 #include "emulator/file_format/pkg.h"
 #include "emulator/loader.h"
@@ -149,6 +149,7 @@ void MainWindow::CreateConnects() {
     connect(ui->mw_searchbar, &QLineEdit::textChanged, m_game_list_frame,
             &GameListFrame::SetSearchText);
     connect(ui->bootInstallPkgAct, &QAction::triggered, this, [this] { InstallPkg(); });
+    connect(ui->gameInstallPathAct, &QAction::triggered, this, [this] { InstallDirectory(); });
 }
 
 void MainWindow::SetIconSizeActions(int idx) const {
@@ -294,4 +295,9 @@ void MainWindow::InstallDragDropPkg(std::string file, int pkgNum, int nPkg) {
         QMessageBox::critical(this, "PKG ERROR", "File doesn't appear to be a valid PKG file",
                               QMessageBox::Ok, 0);
     }
+}
+
+void MainWindow::InstallDirectory() {
+    GameInstallDialog dlg(m_gui_settings);
+    dlg.exec();
 }

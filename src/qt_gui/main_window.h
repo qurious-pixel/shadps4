@@ -27,6 +27,7 @@ public:
     bool Init();
     void InstallPkg();
     void InstallDragDropPkg(std::string file, int pkgNum, int nPkg);
+    void InstallDirectory();
 
 private Q_SLOTS:
     void ConfigureGuiFromSettings();

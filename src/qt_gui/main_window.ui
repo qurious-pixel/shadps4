@@ -180,8 +180,15 @@
     <addaction name="menuGame_List_Mode"/>
     <addaction name="menuGame_List_Icons"/>
    </widget>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="gameInstallPathAct"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
+   <addaction name="menuSettings"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
@@ -280,10 +287,15 @@
     <string>Grid View</string>
    </property>
   </action>
+  <action name="gameInstallPathAct">
+   <property name="text">
+    <string>Game Install Directory</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources>
-  <include location="../../../shadps4/shadps4/resources.qrc"/>
+  <include location="../../shadps4/resources.qrc"/>
  </resources>
  <connections/>
 </ui>

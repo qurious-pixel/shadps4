@@ -22,6 +22,8 @@ qt_add_executable(shadps4
     qt_gui/game_list_frame.cpp
     qt_gui/game_list_frame.h
     qt_gui/qt_utils.h
+    qt_gui/game_install_dialog.cpp
+    qt_gui/game_install_dialog.h
     common/io_file.cpp
     common/io_file.h
     common/types.h
