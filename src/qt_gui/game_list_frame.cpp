@@ -386,7 +386,7 @@ void GameListFrame::Refresh(const bool from_drive, const bool scroll_after) {
         m_games.clear();
 
         // TODO better ATM manually add path from 1 dir to m_paths_list
-        QDir parent_folder(QString::fromStdString(QDir::currentPath().toStdString() + "/game/"));
+        QDir parent_folder(m_gui_settings->GetValue(gui::settings_install_dir).toString() +'/');
         QFileInfoList fList =
             parent_folder.entryInfoList(QDir::AllDirs | QDir::NoDotAndDotDot, QDir::DirsFirst);
         foreach (QFileInfo item, fList) {

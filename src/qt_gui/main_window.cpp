@@ -250,7 +250,9 @@ void MainWindow::InstallDragDropPkg(std::string file, int pkgNum, int nPkg) {
         PKG pkg;
         pkg.Open(file);
         std::string failreason;
-        const auto extract_path = std::filesystem::current_path() / "game" / pkg.GetTitleID();
+        const auto extract_path =
+            std::filesystem::path(m_gui_settings->GetValue(gui::settings_install_dir).toString().toStdString()) /
+            pkg.GetTitleID();
         if (!pkg.Extract(file, extract_path, failreason)) {
             QMessageBox::critical(this, "PKG ERROR", QString::fromStdString(failreason),
                                   QMessageBox::Ok, 0);
@@ -283,7 +285,7 @@ void MainWindow::InstallDragDropPkg(std::string file, int pkgNum, int nPkg) {
             dialog.exec();
             futureWatcher.waitForFinished();
 
-            auto path = QDir::currentPath() + "/game";
+            auto path = m_gui_settings->GetValue(gui::settings_install_dir).toString();
             if (pkgNum == nPkg) {
                 QMessageBox::information(this, "Extraction Finished",
                                          "Game successfully installed at " + path, QMessageBox::Ok,
