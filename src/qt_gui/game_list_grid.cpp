@@ -6,8 +6,8 @@
 
 GameListGrid::GameListGrid(const QSize& icon_size, QColor icon_color, const qreal& margin_factor,
                            const qreal& text_factor, const bool& showText)
-    : m_icon_size(icon_size), m_icon_color(std::move(icon_color)),
-      m_margin_factor(margin_factor), m_text_factor(text_factor), m_text_enabled(showText) {
+    : m_icon_size(icon_size), m_icon_color(std::move(icon_color)), m_margin_factor(margin_factor),
+      m_text_factor(text_factor), m_text_enabled(showText) {
     setObjectName("game_grid");
 
     QSize item_size;
@@ -32,6 +32,11 @@ GameListGrid::GameListGrid(const QSize& icon_size, QColor icon_color, const qrea
     verticalHeader()->setVisible(false);
     horizontalHeader()->setVisible(false);
     setShowGrid(false);
+    QPalette palette;
+    palette.setColor(QPalette::Base, Qt::lightGray);
+    setPalette(palette);
+
+    connect(this, &GameListTable::itemClicked, this, &GameListGrid::SetGridBackgroundImage);
 }
 
 void GameListGrid::enableText(const bool& enabled) {
@@ -49,7 +54,7 @@ void GameListGrid::setIconSize(const QSize& size) const {
 }
 
 GameListItem* GameListGrid::addItem(const game_info& app, const QString& name, const int& row,
-                                      const int& col) {
+                                    const int& col) {
     GameListItem* item = new GameListItem;
     item->set_icon_func([this, app, item](int) {
         const qreal device_pixel_ratio = devicePixelRatioF();
@@ -100,4 +105,26 @@ GameListItem* GameListGrid::addItem(const game_info& app, const QString& name, c
 
 qreal GameListGrid::getMarginFactor() const {
     return m_margin_factor;
+}
+
+void GameListGrid::SetGridBackgroundImage(QTableWidgetItem* item) {
+    if (!item) {
+        // handle case where icon item does not exist
+        return;
+    }
+    QTableWidgetItem* iconItem = this->item(item->row(), item->column());
+
+    if (!iconItem) {
+        // handle case where icon item does not exist
+        return;
+    }
+    game_info gameinfo = GetGameInfoFromItem(iconItem);
+    QString imagePath = QString::fromStdString(gameinfo->info.pic_path);
+
+    QImage img1(imagePath);
+    img1 = m_game_list_utils.BlurImage(img1, img1.rect(), 18);
+    QPixmap blurredPixmap = QPixmap::fromImage(img1);
+    QPalette palette;
+    palette.setBrush(QPalette::Base, QBrush(blurredPixmap.scaled(size(), Qt::IgnoreAspectRatio)));
+    this->setPalette(palette);
 }

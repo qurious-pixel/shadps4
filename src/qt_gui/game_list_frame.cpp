@@ -57,6 +57,9 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
     m_game_list->setContextMenuPolicy(Qt::CustomContextMenu);
     m_game_list->installEventFilter(this);
     m_game_list->setColumnCount(gui::column_count);
+    QPalette palette;
+    palette.setColor(QPalette::Base, Qt::lightGray);
+    m_game_list->setPalette(palette);
 
     m_central_widget = new QStackedWidget(this);
     m_central_widget->addWidget(m_game_list);
@@ -237,7 +240,7 @@ void GameListFrame::SetBackgroundImage(QTableWidgetItem* item) {
     QString imagePath = QString::fromStdString(gameinfo->info.pic_path);
 
     QImage img1(imagePath);
-    img1 = GameListFrame::BlurImage(img1, img1.rect(), 18);
+    img1 = m_game_list_utils.BlurImage(img1, img1.rect(), 18);
     QPixmap blurredPixmap = QPixmap::fromImage(img1);
     QPalette palette;
     palette.setBrush(QPalette::Base,
@@ -476,8 +479,9 @@ void GameListFrame::PopulateGameList() {
         SetTableItem(m_game_list, row, gui::column_serial,
                      QString::fromStdString(game->info.serial));
         SetTableItem(m_game_list, row, gui::column_firmware, QString::fromStdString(game->info.fw));
-        SetTableItem(m_game_list, row, gui::column_size,
-                     getFolderSize(QDir(QString::fromStdString(game->info.path))));
+        SetTableItem(
+            m_game_list, row, gui::column_size,
+            m_game_list_utils.GetFolderSize(QDir(QString::fromStdString(game->info.path))));
         SetTableItem(m_game_list, row, gui::column_version,
                      QString::fromStdString(game->info.version));
         SetTableItem(m_game_list, row, gui::column_category,
