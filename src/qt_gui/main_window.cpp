@@ -9,8 +9,8 @@
 #include "ui_main_window.h"
 
 #include "common/io_file.h"
-#include "emulator/loader.h"
 #include "emulator/file_format/pkg.h"
+#include "emulator/loader.h"
 
 MainWindow::MainWindow(std::shared_ptr<GuiSettings> gui_settings, QWidget* parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), m_gui_settings(std::move(gui_settings)) {
@@ -111,12 +111,11 @@ void MainWindow::CreateConnects() {
         m_save_slider_pos = true;
         ResizeIcons(index);
     });
-    connect(m_game_list_frame, &GameListFrame::RequestIconSizeChange, this,
-            [this](const int& val) {
-                const int idx = ui->sizeSlider->value() + val;
-                m_save_slider_pos = true;
-                ResizeIcons(idx);
-            });
+    connect(m_game_list_frame, &GameListFrame::RequestIconSizeChange, this, [this](const int& val) {
+        const int idx = ui->sizeSlider->value() + val;
+        m_save_slider_pos = true;
+        ResizeIcons(idx);
+    });
 
     connect(m_list_mode_act_group, &QActionGroup::triggered, this, [this](QAction* act) {
         const bool is_list_act = act == ui->setlistModeListAct;

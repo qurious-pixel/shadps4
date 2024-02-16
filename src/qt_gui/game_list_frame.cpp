@@ -145,17 +145,15 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
     connect(m_game_grid, &QTableWidget::customContextMenuRequested, this,
             &GameListFrame::RequestGameMenu);
 
-    connect(m_game_list, &QTableWidget::itemClicked, this, 
-            &GameListFrame::SetBackgroundImage);
+    connect(m_game_list, &QTableWidget::itemClicked, this, &GameListFrame::SetBackgroundImage);
 
-    connect(this, &GameListFrame::ResizedWindow, this, 
-            &GameListFrame::SetBackgroundImage);
+    connect(this, &GameListFrame::ResizedWindow, this, &GameListFrame::SetBackgroundImage);
 
-    //TODO:
-    // - Add the background image to Grid.
-    // - Find a better way to blur the image.
-    // - Add a default background color, maybe gray.
-    // - Refresh the background image when we scroll horizontally.
+    // TODO:
+    //  - Add the background image to Grid.
+    //  - Find a better way to blur the image.
+    //  - Add a default background color, maybe gray.
+    //  - Refresh the background image when we scroll horizontally.
 }
 GameListFrame::~GameListFrame() {
     gui::utils::stop_future_watcher(m_repaint_watcher, true);
@@ -239,7 +237,7 @@ void GameListFrame::SetBackgroundImage(QTableWidgetItem* item) {
     QString imagePath = QString::fromStdString(gameinfo->info.pic_path);
 
     QImage img1(imagePath);
-    img1 = GameListFrame::blurImage(img1, img1.rect(), 18);
+    img1 = GameListFrame::BlurImage(img1, img1.rect(), 18);
     QPixmap blurredPixmap = QPixmap::fromImage(img1);
     QPalette palette;
     palette.setBrush(QPalette::Base,
@@ -474,20 +472,17 @@ void GameListFrame::PopulateGameList() {
         icon_item->setData(gui::custom_roles::game_role, QVariant::fromValue(game));
 
         m_game_list->setItem(row, gui::column_icon, icon_item);
-        setTableItem(m_game_list, row, gui::column_name, 
-                     QString::fromStdString(game->info.name));
-        setTableItem(m_game_list, row, gui::column_serial,
+        SetTableItem(m_game_list, row, gui::column_name, QString::fromStdString(game->info.name));
+        SetTableItem(m_game_list, row, gui::column_serial,
                      QString::fromStdString(game->info.serial));
-        setTableItem(m_game_list, row, gui::column_firmware, 
-                     QString::fromStdString(game->info.fw));
-        setTableItem(m_game_list, row, gui::column_size, 
+        SetTableItem(m_game_list, row, gui::column_firmware, QString::fromStdString(game->info.fw));
+        SetTableItem(m_game_list, row, gui::column_size,
                      getFolderSize(QDir(QString::fromStdString(game->info.path))));
-        setTableItem(m_game_list, row, gui::column_version,
+        SetTableItem(m_game_list, row, gui::column_version,
                      QString::fromStdString(game->info.version));
-        setTableItem(m_game_list, row, gui::column_category,
+        SetTableItem(m_game_list, row, gui::column_category,
                      QString::fromStdString(game->info.category));
-        setTableItem(m_game_list, row, gui::column_path, 
-                     QString::fromStdString(game->info.path));
+        SetTableItem(m_game_list, row, gui::column_path, QString::fromStdString(game->info.path));
 
         if (selected_item == game->info.path + game->info.icon_path) {
             selected_row = row;

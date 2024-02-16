@@ -1,8 +1,8 @@
 #pragma once
 
 #include <QActionGroup>
-#include <QMainWindow>
 #include <QDragEnterEvent>
+#include <QMainWindow>
 #include <QMimeData>
 
 class GuiSettings;
@@ -48,7 +48,7 @@ private:
 
     std::shared_ptr<GuiSettings> m_gui_settings;
 
- protected:
+protected:
     void dragEnterEvent(QDragEnterEvent* event1) override {
         if (event1->mimeData()->hasUrls()) {
             event1->acceptProposedAction();
@@ -64,8 +64,7 @@ private:
             for (const QUrl& url : urlList) {
                 pkgNum++;
                 InstallDragDropPkg(url.toLocalFile().toStdString(), pkgNum, nPkg);
-                 
-            } 
+            }
         }
     }
 };
