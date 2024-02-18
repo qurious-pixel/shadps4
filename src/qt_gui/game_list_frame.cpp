@@ -40,7 +40,7 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
     m_game_list->setShowGrid(false);
     m_game_list->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_game_list->setSelectionBehavior(QAbstractItemView::SelectRows);
-    m_game_list->setSelectionMode(QAbstractItemView::NoSelection);
+    m_game_list->setSelectionMode(QAbstractItemView::SingleSelection);
     m_game_list->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_game_list->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_game_list->verticalScrollBar()->installEventFilter(this);
@@ -147,8 +147,12 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
     connect(m_game_grid, &QTableWidget::customContextMenuRequested, this,
             &GameListFrame::RequestGameMenu);
 
-    connect(m_game_list, &QTableWidget::itemClicked, this, &GameListFrame::SetBackgroundImage);
-    connect(this, &GameListFrame::ResizedWindow, this, &GameListFrame::SetBackgroundImage);
+    connect(m_game_list, &QTableWidget::itemClicked, this, &GameListFrame::SetListBackgroundImage);
+    connect(this, &GameListFrame::ResizedWindow, this, &GameListFrame::SetListBackgroundImage);
+    connect(m_game_list->verticalScrollBar(), &QScrollBar::valueChanged, this,
+            &GameListFrame::RefreshListBackgroundImage);
+    connect(m_game_list->horizontalScrollBar(), &QScrollBar::valueChanged, this,
+            &GameListFrame::RefreshListBackgroundImage);
 }
 
 GameListFrame::~GameListFrame() {
@@ -216,7 +220,11 @@ void GameListFrame::RequestGameMenu(const QPoint& pos) {
     }
 }
 
-void GameListFrame::SetBackgroundImage(QTableWidgetItem* item) {
+void GameListFrame::RefreshListBackgroundImage() {
+    SetListBackgroundImage(m_game_list->currentItem());
+}
+
+void GameListFrame::SetListBackgroundImage(QTableWidgetItem* item) {
     if (!item) {
         // handle case where no item was clicked
         return;
@@ -233,8 +241,9 @@ void GameListFrame::SetBackgroundImage(QTableWidgetItem* item) {
     QImage img1(imagePath);
     QPixmap blurredPixmap = QPixmap::fromImage(img1);
     QPalette palette;
-    palette.setBrush(QPalette::Base,
-                     QBrush(img1.scaled(m_game_list->size(), Qt::IgnoreAspectRatio)));
+    palette.setBrush(QPalette::Base, QBrush(blurredPixmap.scaled(size(), Qt::IgnoreAspectRatio)));
+    QColor transparentColor = QColor(135, 206, 235, 80);
+    palette.setColor(QPalette::Highlight, transparentColor);
     m_game_list->setPalette(palette);
 }
 

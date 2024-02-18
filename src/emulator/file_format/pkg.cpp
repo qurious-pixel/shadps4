@@ -287,7 +287,7 @@ bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extr
 
     // Create Folders.
     folderMap[2] = GetTitleID(); // Set up game path instead of calling it uroot
-    game_dir = std::filesystem::current_path() / "game";
+    game_dir = extract_path;     // std::filesystem::current_path() / "game";
     title_dir = game_dir / GetTitleID();
 
     // Game dir already created but ok let's leave it for now.

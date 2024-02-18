@@ -53,7 +53,8 @@ private Q_SLOTS:
     void OnRepaintFinished();
     void OnRefreshFinished();
     void RequestGameMenu(const QPoint& pos);
-    void SetBackgroundImage(QTableWidgetItem* item);
+    void SetListBackgroundImage(QTableWidgetItem* item);
+    void RefreshListBackgroundImage();
 
 Q_SIGNALS:
     void GameListFrameClosed();
@@ -133,7 +134,7 @@ private:
 
         layout->addWidget(label);
         widget->setLayout(layout);
-
+        
         game_list->setItem(row, column, item);
         game_list->setCellWidget(row, column, widget);
     }
