@@ -40,7 +40,7 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
     m_game_list->setShowGrid(false);
     m_game_list->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_game_list->setSelectionBehavior(QAbstractItemView::SelectRows);
-    m_game_list->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_game_list->setSelectionMode(QAbstractItemView::NoSelection);
     m_game_list->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_game_list->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_game_list->verticalScrollBar()->installEventFilter(this);
@@ -60,7 +60,6 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
     QPalette palette;
     palette.setColor(QPalette::Base, Qt::lightGray);
     m_game_list->setPalette(palette);
-
     m_central_widget = new QStackedWidget(this);
     m_central_widget->addWidget(m_game_list);
     m_central_widget->addWidget(m_game_grid);
@@ -149,15 +148,9 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
             &GameListFrame::RequestGameMenu);
 
     connect(m_game_list, &QTableWidget::itemClicked, this, &GameListFrame::SetBackgroundImage);
-
     connect(this, &GameListFrame::ResizedWindow, this, &GameListFrame::SetBackgroundImage);
-
-    // TODO:
-    //  - Add the background image to Grid.
-    //  - Find a better way to blur the image.
-    //  - Add a default background color, maybe gray.
-    //  - Refresh the background image when we scroll horizontally.
 }
+
 GameListFrame::~GameListFrame() {
     gui::utils::stop_future_watcher(m_repaint_watcher, true);
     gui::utils::stop_future_watcher(m_refresh_watcher, true);
@@ -228,7 +221,6 @@ void GameListFrame::SetBackgroundImage(QTableWidgetItem* item) {
         // handle case where no item was clicked
         return;
     }
-
     QTableWidgetItem* iconItem =
         m_game_list->item(item->row(), static_cast<int>(gui::game_list_columns::column_icon));
 
@@ -238,13 +230,11 @@ void GameListFrame::SetBackgroundImage(QTableWidgetItem* item) {
     }
     game_info gameinfo = GetGameInfoFromItem(iconItem);
     QString imagePath = QString::fromStdString(gameinfo->info.pic_path);
-
     QImage img1(imagePath);
-    img1 = m_game_list_utils.BlurImage(img1, img1.rect(), 18);
     QPixmap blurredPixmap = QPixmap::fromImage(img1);
     QPalette palette;
     palette.setBrush(QPalette::Base,
-                     QBrush(blurredPixmap.scaled(m_game_list->size(), Qt::IgnoreAspectRatio)));
+                     QBrush(img1.scaled(m_game_list->size(), Qt::IgnoreAspectRatio)));
     m_game_list->setPalette(palette);
 }
 
@@ -386,7 +376,7 @@ void GameListFrame::Refresh(const bool from_drive, const bool scroll_after) {
         m_games.clear();
 
         // TODO better ATM manually add path from 1 dir to m_paths_list
-        QDir parent_folder(m_gui_settings->GetValue(gui::settings_install_dir).toString() +'/');
+        QDir parent_folder(m_gui_settings->GetValue(gui::settings_install_dir).toString() + '/');
         QFileInfoList fList =
             parent_folder.entryInfoList(QDir::AllDirs | QDir::NoDotAndDotDot, QDir::DirsFirst);
         foreach (QFileInfo item, fList) {
@@ -399,7 +389,8 @@ void GameListFrame::Refresh(const bool from_drive, const bool scroll_after) {
             PSF psf;
             if (psf.open(game.path + "/sce_sys/param.sfo")) {
                 QString iconpath(QString::fromStdString(game.path) + "/sce_sys/icon0.png");
-                QString picpath(QString::fromStdString(game.path) + "/sce_sys/pic1.png");
+                QString picpath("game_data/" + QString::fromStdString(psf.GetString("TITLE_ID")) +
+                                "/pic1.png");
                 game.icon_path = iconpath.toStdString();
                 game.pic_path = picpath.toStdString();
                 game.name = psf.GetString("TITLE");

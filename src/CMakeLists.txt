@@ -1,5 +1,5 @@
 qt_add_executable(shadps4
-    qt_gui/main_window.ui
+    qt_gui/main_window_ui.h
     qt_gui/main_window.cpp
     qt_gui/main_window.h
     qt_gui/gui_settings.cpp

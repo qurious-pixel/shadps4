@@ -3,14 +3,13 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 
-#include "game_list_frame.h"
-#include "gui_settings.h"
-#include "main_window.h"
-#include "ui_main_window.h"
-#include "game_install_dialog.h"
 #include "common/io_file.h"
 #include "emulator/file_format/pkg.h"
 #include "emulator/loader.h"
+#include "game_install_dialog.h"
+#include "game_list_frame.h"
+#include "gui_settings.h"
+#include "main_window.h"
 
 MainWindow::MainWindow(std::shared_ptr<GuiSettings> gui_settings, QWidget* parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), m_gui_settings(std::move(gui_settings)) {
@@ -30,7 +29,7 @@ bool MainWindow::Init() {
     ui->sizeSlider->setRange(0, gui::game_list_max_slider_pos);
     ui->toolBar->addWidget(ui->sizeSliderContainer);
     ui->toolBar->addWidget(ui->mw_searchbar);
-
+    ui->toolBar->addWidget(ui->darkModeSwitch);
     CreateActions();
     CreateDockWindows();
     CreateConnects();
@@ -47,6 +46,53 @@ bool MainWindow::Init() {
     m_game_list_frame->FixNarrowColumns();
 
     return true;
+}
+
+void MainWindow::DarkModeSwitch() {
+    isDarkMode = !isDarkMode;
+    if (isDarkMode) {
+        QPalette darkPalette;
+        darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::WindowText, Qt::white);
+        darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
+        darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+        darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+        darkPalette.setColor(QPalette::Text, Qt::white);
+        darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::ButtonText, Qt::white);
+        darkPalette.setColor(QPalette::BrightText, Qt::red);
+        darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+        this->setPalette(darkPalette);
+        ui->menuFile->setPalette(darkPalette);
+        ui->menuView->setPalette(darkPalette);
+        ui->menuSettings->setPalette(darkPalette);
+        ui->menuGame_List_Icons->setPalette(darkPalette);
+        ui->menuGame_List_Mode->setPalette(darkPalette);
+    } else {
+        QPalette lightPalette;
+        lightPalette.setColor(QPalette::Window, QColor(240, 240, 240));        // Light gray
+        lightPalette.setColor(QPalette::WindowText, Qt::black);                // Black
+        lightPalette.setColor(QPalette::Base, QColor(255, 255, 255));          // White
+        lightPalette.setColor(QPalette::AlternateBase, QColor(240, 240, 240)); // Light gray
+        lightPalette.setColor(QPalette::ToolTipBase, Qt::black);               // Black
+        lightPalette.setColor(QPalette::ToolTipText, Qt::black);               // Black
+        lightPalette.setColor(QPalette::Text, Qt::black);                      // Black
+        lightPalette.setColor(QPalette::Button, QColor(240, 240, 240));        // Light gray
+        lightPalette.setColor(QPalette::ButtonText, Qt::black);                // Black
+        lightPalette.setColor(QPalette::BrightText, Qt::red);                  // Red
+        lightPalette.setColor(QPalette::Link, QColor(42, 130, 218));           // Blue
+        lightPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));      // Blue
+        lightPalette.setColor(QPalette::HighlightedText, Qt::white);           // White
+        this->setPalette(lightPalette);
+        ui->menuFile->setPalette(lightPalette);
+        ui->menuView->setPalette(lightPalette);
+        ui->menuSettings->setPalette(lightPalette);
+        ui->menuGame_List_Icons->setPalette(lightPalette);
+        ui->menuGame_List_Mode->setPalette(lightPalette);
+    }
 }
 
 void MainWindow::CreateActions() {
@@ -150,6 +196,7 @@ void MainWindow::CreateConnects() {
             &GameListFrame::SetSearchText);
     connect(ui->bootInstallPkgAct, &QAction::triggered, this, [this] { InstallPkg(); });
     connect(ui->gameInstallPathAct, &QAction::triggered, this, [this] { InstallDirectory(); });
+    connect(ui->darkModeSwitch, &QPushButton::clicked, this, [this] { DarkModeSwitch(); });
 }
 
 void MainWindow::SetIconSizeActions(int idx) const {
@@ -251,7 +298,8 @@ void MainWindow::InstallDragDropPkg(std::string file, int pkgNum, int nPkg) {
         pkg.Open(file);
         std::string failreason;
         const auto extract_path =
-            std::filesystem::path(m_gui_settings->GetValue(gui::settings_install_dir).toString().toStdString()) /
+            std::filesystem::path(
+                m_gui_settings->GetValue(gui::settings_install_dir).toString().toStdString()) /
             pkg.GetTitleID();
         if (!pkg.Extract(file, extract_path, failreason)) {
             QMessageBox::critical(this, "PKG ERROR", QString::fromStdString(failreason),

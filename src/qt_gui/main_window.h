@@ -4,18 +4,15 @@
 #include <QDragEnterEvent>
 #include <QMainWindow>
 #include <QMimeData>
+#include "main_window_ui.h"
 
 class GuiSettings;
 class GameListFrame;
 
-namespace Ui {
-class MainWindow;
-}
-
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
-    std::unique_ptr<Ui::MainWindow> ui;
+    std::unique_ptr<Ui_MainWindow> ui;
 
     bool m_is_list_mode = true;
     bool m_save_slider_pos = false;
@@ -34,11 +31,13 @@ private Q_SLOTS:
     void SetIconSizeActions(int idx) const;
     void ResizeIcons(int index);
     void SaveWindowState() const;
+    void DarkModeSwitch();
 
 private:
     void CreateActions();
     void CreateDockWindows();
     void CreateConnects();
+    bool isDarkMode;
 
     QActionGroup* m_icon_size_act_group = nullptr;
     QActionGroup* m_list_mode_act_group = nullptr;

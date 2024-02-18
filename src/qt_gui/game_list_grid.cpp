@@ -37,6 +37,11 @@ GameListGrid::GameListGrid(const QSize& icon_size, QColor icon_color, const qrea
     setPalette(palette);
 
     connect(this, &GameListTable::itemClicked, this, &GameListGrid::SetGridBackgroundImage);
+    connect(this, &GameListGrid::ResizedWindowGrid, this, &GameListGrid::SetGridBackgroundImage);
+    connect(this->verticalScrollBar(), &QScrollBar::valueChanged, this,
+            &GameListGrid::RefreshBackgroundImage);
+    connect(this->horizontalScrollBar(), &QScrollBar::valueChanged, this,
+            &GameListGrid::RefreshBackgroundImage);
 }
 
 void GameListGrid::enableText(const bool& enabled) {
@@ -106,7 +111,9 @@ GameListItem* GameListGrid::addItem(const game_info& app, const QString& name, c
 qreal GameListGrid::getMarginFactor() const {
     return m_margin_factor;
 }
-
+void GameListGrid::RefreshBackgroundImage() {
+    SetGridBackgroundImage(this->currentItem());
+}
 void GameListGrid::SetGridBackgroundImage(QTableWidgetItem* item) {
     if (!item) {
         // handle case where icon item does not exist
@@ -122,9 +129,12 @@ void GameListGrid::SetGridBackgroundImage(QTableWidgetItem* item) {
     QString imagePath = QString::fromStdString(gameinfo->info.pic_path);
 
     QImage img1(imagePath);
-    img1 = m_game_list_utils.BlurImage(img1, img1.rect(), 18);
     QPixmap blurredPixmap = QPixmap::fromImage(img1);
     QPalette palette;
     palette.setBrush(QPalette::Base, QBrush(blurredPixmap.scaled(size(), Qt::IgnoreAspectRatio)));
     this->setPalette(palette);
+}
+
+void GameListGrid::resizeEvent(QResizeEvent* event) {
+    Q_EMIT ResizedWindowGrid(this->currentItem());
 }

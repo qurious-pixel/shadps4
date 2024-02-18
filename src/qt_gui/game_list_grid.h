@@ -1,5 +1,6 @@
 #pragma once
 
+#include "custom_dock_widget.h"
 #include "game_list_table.h"
 #include "game_list_utils.h"
 #include "gui_settings.h"
@@ -15,6 +16,12 @@ class GameListGrid : public GameListTable {
     qreal m_text_factor;
     bool m_text_enabled = true;
 
+Q_SIGNALS:
+    void ResizedWindowGrid(QTableWidgetItem* item);
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+
 public:
     explicit GameListGrid(const QSize& icon_size, QColor icon_color, const qreal& margin_factor,
                           const qreal& text_factor, const bool& showText);
@@ -27,6 +34,7 @@ public:
     [[nodiscard]] qreal getMarginFactor() const;
 
     void SetGridBackgroundImage(QTableWidgetItem* item);
+    void RefreshBackgroundImage();
 
     game_info GetGameInfoFromItem(const QTableWidgetItem* item) {
         if (!item) {

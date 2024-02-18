@@ -1,10 +1,11 @@
 #include "common/io_file.h"
-#include "emulator/file_format/pkg_type.h"
 #include "emulator/file_format/pkg.h"
+#include "emulator/file_format/pkg_type.h"
 
 #include <zlib-ng.h>
 
-static void DecompressPFSC(std::span<const char> compressed_data, std::span<char> decompressed_data) {
+static void DecompressPFSC(std::span<const char> compressed_data,
+                           std::span<char> decompressed_data) {
     zng_stream decompressStream;
     decompressStream.zalloc = Z_NULL;
     decompressStream.zfree = Z_NULL;
@@ -71,7 +72,8 @@ bool PKG::Open(const std::string& filepath) {
     return true;
 }
 
-bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extract, std::string& failreason) {
+bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extract,
+                  std::string& failreason) {
     extract_path = extract;
     pkgpath = filepath;
     IOFile file(filepath);
@@ -159,6 +161,19 @@ bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extr
         IOFile out(extract_path / "sce_sys" / name, "wb");
         out.writeBytes(pkg.data() + entry.offset, entry.size);
         out.close();
+
+        if (name == "pic1.png") {
+            std::vector<u8> imageData(entry.size);
+            std::memcpy(imageData.data(), pkg.data() + entry.offset, entry.size);
+            QImage image = QImage::fromData((imageData.data()), entry.size);
+            QImage image_ = game_utils.BlurImage(image, image.rect(), 18);
+
+            std::filesystem::path img_path = std::filesystem::path("game_data/") / GetTitleID();
+            std::filesystem::create_directories(img_path);
+            if (!image_.save(QString::fromStdString(img_path.string() + "/pic1.png"), "PNG")) {
+                // qDebug() << "Error: Unable to save image.";
+            }
+        }
     }
 
     // Read the seed
@@ -290,7 +305,7 @@ bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extr
             // Skip uroot folder. we create our own game uid folder
             if (i > 1) {
                 const auto par_dir = inode_number == 2 ? findDirectory(game_dir, parent_dir)
-                                                        : findDirectory(title_dir, parent_dir);
+                                                       : findDirectory(title_dir, parent_dir);
                 const auto cur_dir = findDirectory(par_dir, current_dir);
 
                 if (cur_dir == "") {
@@ -320,6 +335,9 @@ void PKG::ExtractFiles(const int& index) {
         IOFile inflated;
         inflated.open(file_extracted, "wb");
 
+        IOFile pkgFile; // Open the file for each iteration to avoid conflict.
+        pkgFile.open(pkgpath);
+
         int size_decompressed = 0;
         std::vector<char> compressedData;
         std::vector<char> decompressedData(0x10000);
@@ -340,13 +358,8 @@ void PKG::ExtractFiles(const int& index) {
             int sectorOffsetMask = (sectorOffset + pfsc_offset) & 0xFFFFF000;
             int previousData = (sectorOffset + pfsc_offset) - sectorOffsetMask;
 
-            IOFile file; // Open the file for each iteration to avoid conflict.
-            if (!file.open(pkgpath)) {
-                // return false;
-            }
-
-            file.seek(fileOffset - previousData);
-            file.readBytes(pfsc.data(), pfsc.size());
+            pkgFile.seek(fileOffset - previousData);
+            pkgFile.readBytes(pfsc.data(), pfsc.size());
 
             PKG::crypto.decryptPFS(dataKey, tweakKey, pfsc, pfs_decrypted, currentSector1);
 
@@ -369,9 +382,8 @@ void PKG::ExtractFiles(const int& index) {
             }
 
             // Close the file for each iteration to avoid conflict.
-            file.close();
         }
+        pkgFile.close();
         inflated.close();
     }
 }
-
