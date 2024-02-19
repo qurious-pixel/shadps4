@@ -287,11 +287,8 @@ bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extr
 
     // Create Folders.
     folderMap[2] = GetTitleID(); // Set up game path instead of calling it uroot
-    game_dir = extract_path;     // std::filesystem::current_path() / "game";
+    game_dir = extract_path.parent_path();
     title_dir = game_dir / GetTitleID();
-
-    // Game dir already created but ok let's leave it for now.
-    std::filesystem::create_directories(title_dir);
 
     for (int i = 0; i < fsTable.size(); i++) {
         const u32 inode_number = fsTable[i].inode;
@@ -380,8 +377,6 @@ void PKG::ExtractFiles(const int& index) {
                 const u32 write_size = decompressedData.size() - (size_decompressed - bsize);
                 inflated.writeBytes(decompressedData.data(), write_size);
             }
-
-            // Close the file for each iteration to avoid conflict.
         }
         pkgFile.close();
         inflated.close();
