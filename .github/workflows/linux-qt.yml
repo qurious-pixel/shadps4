@@ -52,17 +52,15 @@ jobs:
     - name: Build
       run: |
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-        ls -al .github
-        ls -al build/src
         find -name shadps4
 
-    #- name: Run AppImage packaging script
-    #  run:  |
-    #    chmod +x .github/linux-appimage-qt.sh
-    #    ./.github/linux-appimage-qt.sh
+    - name: Run AppImage packaging script
+      run:  |
+        chmod +x .github/linux-appimage-qt.sh
+        ./.github/linux-appimage-qt.sh
 
-    #- name: Upload executable
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: Linux executable
-    #    path: Shadps4-x86_64.AppImage 
+    - name: Upload executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: Linux executable
+        path: Shadps4-x86_64.AppImage 
