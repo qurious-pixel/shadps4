@@ -50,15 +50,18 @@ jobs:
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: |
+        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        ls -al build
+        ls -al
 
-    - name: Run AppImage packaging script
-      run:  |
-        chmod +x .github/linux-appimage-qt.sh
-        ./.github/linux-appimage-qt.sh
+    #- name: Run AppImage packaging script
+    #  run:  |
+    #    chmod +x .github/linux-appimage-qt.sh
+    #    ./.github/linux-appimage-qt.sh
 
-    - name: Upload executable
-      uses: actions/upload-artifact@v2
-      with:
-        name: Linux executable
-        path: Shadps4-x86_64.AppImage 
+    #- name: Upload executable
+    #  uses: actions/upload-artifact@v2
+    #  with:
+    #    name: Linux executable
+    #    path: Shadps4-x86_64.AppImage 
