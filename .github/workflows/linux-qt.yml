@@ -33,7 +33,7 @@ jobs:
       run: |
        wget https://apt.llvm.org/llvm.sh
        chmod +x ./llvm.sh
-       sudo ./llvm.sh 17
+       sudo ./llvm.sh 16
     
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -62,5 +62,5 @@ jobs:
     - name: Upload executable
       uses: actions/upload-artifact@v4
       with:
-        name: Linux executable
+        name: shadps4-linux-qt
         path: Shadps4-x86_64.AppImage 
