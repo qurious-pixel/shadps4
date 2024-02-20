@@ -16,3 +16,7 @@
 [submodule "externals/zlib-ng-win"]
 	path = externals/zlib-ng-win
 	url = https://github.com/shadps4-emu/ext-zlib-ng-win.git
+[submodule "tools/ModuleGenerator/externals/json"]
+	path = tools/ModuleGenerator/externals/json
+	url = https://github.com/nlohmann/json.git
+	branch = master
