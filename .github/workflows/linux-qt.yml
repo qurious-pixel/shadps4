@@ -53,7 +53,8 @@ jobs:
       run: |
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
         ls -al .github
-        ls -al
+        ls -al build/src
+        find -name shadps4
 
     #- name: Run AppImage packaging script
     #  run:  |
