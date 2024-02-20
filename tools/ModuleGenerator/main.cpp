@@ -26,6 +26,10 @@ void GenerateCodeFiles(
     {
         trimmedName = moduleName.substr(6, moduleName.size()-1);
     }
+    else if (moduleName.find("lib") != std::string::npos) {
+        trimmedName = moduleName.substr(3, moduleName.size() - 1);
+        trimmedName[0] = toupper(trimmedName[0]);
+    }
     headerCode += "namespace Libraries::" + trimmedName + "{\n\n";
     std::unordered_set<std::string> funcDeclares;
     for (const auto& lib : libName2FuncTableMap) {
@@ -141,7 +145,11 @@ int main(int argc, char* argv[]) {
 
     std::vector<std::string> modules_to_generate;
     modules_to_generate.push_back(std::string("libSceGnmDriver"));
-
+    modules_to_generate.push_back(std::string("libScePad"));
+    modules_to_generate.push_back(std::string("libSceVideoOut"));
+    modules_to_generate.push_back(std::string("libkernel"));
+    modules_to_generate.push_back(std::string("libSceSystemService"));
+    modules_to_generate.push_back(std::string("libSceUserService"));
     GetSymbolsFromLibDoc(modules_to_generate);
 
     return 0;
