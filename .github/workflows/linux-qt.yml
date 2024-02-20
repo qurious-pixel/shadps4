@@ -7,7 +7,7 @@ name: Linux-Qt
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "appimage" ]
   pull_request:
     branches: [ "main" ]
   workflow_dispatch: 
@@ -61,4 +61,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Linux executable
-        path: shadps4-x86_64.AppImage 
+        path: Shadps4-x86_64.AppImage 
