@@ -12,6 +12,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(externals/json)
 
+add_definitions( -DMODULE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/libraries/" )
+add_definitions( -DLIBDOC_DIR="${CMAKE_CURRENT_SOURCE_DIR}/ps4libdoc/system/common/lib/" )
+
 add_executable(modgen
     main.cpp
 )
