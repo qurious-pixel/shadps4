@@ -9,7 +9,6 @@
 #include "common/crypto.h"
 #include "common/endian.h"
 #include "pfs.h"
-#include "qt_gui/game_list_utils.h"
 
 struct PKGHeader {
     u32_be magic; // Magic
@@ -107,7 +106,6 @@ public:
 
 private:
     Crypto crypto;
-    GameListUtils game_utils;
     std::vector<u8> pkg;
     u64 pkgSize = 0;
     char pkgTitleID[9];

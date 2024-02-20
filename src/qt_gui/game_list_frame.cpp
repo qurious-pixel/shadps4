@@ -58,7 +58,9 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
     m_game_list->installEventFilter(this);
     m_game_list->setColumnCount(gui::column_count);
     QPalette palette;
-    palette.setColor(QPalette::Base, Qt::lightGray);
+    palette.setColor(QPalette::Base, QColor(230, 230, 230, 80));
+    QColor transparentColor = QColor(135, 206, 235, 80);
+    palette.setColor(QPalette::Highlight, transparentColor);
     m_game_list->setPalette(palette);
     m_central_widget = new QStackedWidget(this);
     m_central_widget->addWidget(m_game_list);
@@ -70,7 +72,9 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
     // Actions regarding showing/hiding columns
     auto add_column = [this](gui::game_list_columns col, const QString& header_text,
                              const QString& action_text) {
-        m_game_list->setHorizontalHeaderItem(col, new QTableWidgetItem(header_text));
+        QTableWidgetItem* item_ = new QTableWidgetItem(header_text);
+        item_->setTextAlignment(Qt::AlignCenter); // Center-align text
+        m_game_list->setHorizontalHeaderItem(col, item_);
         m_columnActs.append(new QAction(action_text, this));
     };
 
@@ -237,8 +241,23 @@ void GameListFrame::SetListBackgroundImage(QTableWidgetItem* item) {
         return;
     }
     game_info gameinfo = GetGameInfoFromItem(iconItem);
-    QString imagePath = QString::fromStdString(gameinfo->info.pic_path);
-    QImage img1(imagePath);
+    QString pic1Path = QString::fromStdString(gameinfo->info.pic_path);
+    QString blurredPic1Path =
+        qApp->applicationDirPath() +
+        QString::fromStdString("/game_data/" + gameinfo->info.serial + "/pic1.png");
+
+    QImage img1(blurredPic1Path);
+    if (img1.isNull()) {
+        QImage image(pic1Path);
+        img1 = m_game_list_utils.BlurImage(image, image.rect(), 18);
+
+        std::filesystem::path img_path =
+            std::filesystem::path("game_data/") / gameinfo->info.serial;
+        std::filesystem::create_directories(img_path);
+        if (!img1.save(blurredPic1Path, "PNG")) {
+            // qDebug() << "Error: Unable to save image.";
+        }
+    }
     QPixmap blurredPixmap = QPixmap::fromImage(img1);
     QPalette palette;
     palette.setBrush(QPalette::Base, QBrush(blurredPixmap.scaled(size(), Qt::IgnoreAspectRatio)));
@@ -387,7 +406,7 @@ void GameListFrame::Refresh(const bool from_drive, const bool scroll_after) {
         // TODO better ATM manually add path from 1 dir to m_paths_list
         QDir parent_folder(m_gui_settings->GetValue(gui::settings_install_dir).toString() + '/');
         QFileInfoList fList =
-            parent_folder.entryInfoList(QDir::AllDirs | QDir::NoDotAndDotDot, QDir::DirsFirst);
+            parent_folder.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::DirsFirst);
         foreach (QFileInfo item, fList) {
             m_path_list.emplace_back(item.absoluteFilePath().toStdString());
         }
@@ -398,8 +417,7 @@ void GameListFrame::Refresh(const bool from_drive, const bool scroll_after) {
             PSF psf;
             if (psf.open(game.path + "/sce_sys/param.sfo")) {
                 QString iconpath(QString::fromStdString(game.path) + "/sce_sys/icon0.png");
-                QString picpath("game_data/" + QString::fromStdString(psf.GetString("TITLE_ID")) +
-                                "/pic1.png");
+                QString picpath(QString::fromStdString(game.path) + "/sce_sys/pic1.png");
                 game.icon_path = iconpath.toStdString();
                 game.pic_path = picpath.toStdString();
                 game.name = psf.GetString("TITLE");

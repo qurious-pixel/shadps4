@@ -25,11 +25,12 @@ MainWindow::~MainWindow() {
 
 bool MainWindow::Init() {
     // add toolbar widgets
+    QApplication::setStyle("Fusion");
     ui->toolBar->setObjectName("mw_toolbar");
     ui->sizeSlider->setRange(0, gui::game_list_max_slider_pos);
     ui->toolBar->addWidget(ui->sizeSliderContainer);
     ui->toolBar->addWidget(ui->mw_searchbar);
-    ui->toolBar->addWidget(ui->darkModeSwitch);
+
     CreateActions();
     CreateDockWindows();
     CreateConnects();
@@ -48,53 +49,6 @@ bool MainWindow::Init() {
     return true;
 }
 
-void MainWindow::DarkModeSwitch() {
-    isDarkMode = !isDarkMode;
-    if (isDarkMode) {
-        QPalette darkPalette;
-        darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
-        darkPalette.setColor(QPalette::WindowText, Qt::white);
-        darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
-        darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
-        darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
-        darkPalette.setColor(QPalette::ToolTipText, Qt::white);
-        darkPalette.setColor(QPalette::Text, Qt::white);
-        darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
-        darkPalette.setColor(QPalette::ButtonText, Qt::white);
-        darkPalette.setColor(QPalette::BrightText, Qt::red);
-        darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
-        darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
-        darkPalette.setColor(QPalette::HighlightedText, Qt::black);
-        this->setPalette(darkPalette);
-        ui->menuFile->setPalette(darkPalette);
-        ui->menuView->setPalette(darkPalette);
-        ui->menuSettings->setPalette(darkPalette);
-        ui->menuGame_List_Icons->setPalette(darkPalette);
-        ui->menuGame_List_Mode->setPalette(darkPalette);
-    } else {
-        QPalette lightPalette;
-        lightPalette.setColor(QPalette::Window, QColor(240, 240, 240));        // Light gray
-        lightPalette.setColor(QPalette::WindowText, Qt::black);                // Black
-        lightPalette.setColor(QPalette::Base, QColor(255, 255, 255));          // White
-        lightPalette.setColor(QPalette::AlternateBase, QColor(240, 240, 240)); // Light gray
-        lightPalette.setColor(QPalette::ToolTipBase, Qt::black);               // Black
-        lightPalette.setColor(QPalette::ToolTipText, Qt::black);               // Black
-        lightPalette.setColor(QPalette::Text, Qt::black);                      // Black
-        lightPalette.setColor(QPalette::Button, QColor(240, 240, 240));        // Light gray
-        lightPalette.setColor(QPalette::ButtonText, Qt::black);                // Black
-        lightPalette.setColor(QPalette::BrightText, Qt::red);                  // Red
-        lightPalette.setColor(QPalette::Link, QColor(42, 130, 218));           // Blue
-        lightPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));      // Blue
-        lightPalette.setColor(QPalette::HighlightedText, Qt::white);           // White
-        this->setPalette(lightPalette);
-        ui->menuFile->setPalette(lightPalette);
-        ui->menuView->setPalette(lightPalette);
-        ui->menuSettings->setPalette(lightPalette);
-        ui->menuGame_List_Icons->setPalette(lightPalette);
-        ui->menuGame_List_Mode->setPalette(lightPalette);
-    }
-}
-
 void MainWindow::CreateActions() {
     // create action group for icon size
     m_icon_size_act_group = new QActionGroup(this);
@@ -107,6 +61,14 @@ void MainWindow::CreateActions() {
     m_list_mode_act_group = new QActionGroup(this);
     m_list_mode_act_group->addAction(ui->setlistModeListAct);
     m_list_mode_act_group->addAction(ui->setlistModeGridAct);
+
+    // create action group for themes
+    m_theme_act_group = new QActionGroup(this);
+    m_theme_act_group->addAction(ui->setThemeLight);
+    m_theme_act_group->addAction(ui->setThemeDark);
+    m_theme_act_group->addAction(ui->setThemeGreen);
+    m_theme_act_group->addAction(ui->setThemeBlue);
+    m_theme_act_group->addAction(ui->setThemeViolet);
 }
 
 void MainWindow::CreateDockWindows() {
@@ -196,7 +158,18 @@ void MainWindow::CreateConnects() {
             &GameListFrame::SetSearchText);
     connect(ui->bootInstallPkgAct, &QAction::triggered, this, [this] { InstallPkg(); });
     connect(ui->gameInstallPathAct, &QAction::triggered, this, [this] { InstallDirectory(); });
-    connect(ui->darkModeSwitch, &QPushButton::clicked, this, [this] { DarkModeSwitch(); });
+
+    // Themes
+    connect(ui->setThemeLight, &QAction::triggered, &m_window_themes,
+            [this]() { m_window_themes.SetWindowTheme(Theme::Light); });
+    connect(ui->setThemeDark, &QAction::triggered, &m_window_themes,
+            [this]() { m_window_themes.SetWindowTheme(Theme::Dark); });
+    connect(ui->setThemeGreen, &QAction::triggered, &m_window_themes,
+            [this]() { m_window_themes.SetWindowTheme(Theme::Green); });
+    connect(ui->setThemeBlue, &QAction::triggered, &m_window_themes,
+            [this]() { m_window_themes.SetWindowTheme(Theme::Blue); });
+    connect(ui->setThemeViolet, &QAction::triggered, &m_window_themes,
+            [this]() { m_window_themes.SetWindowTheme(Theme::Violet); });
 }
 
 void MainWindow::SetIconSizeActions(int idx) const {

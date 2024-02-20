@@ -161,19 +161,6 @@ bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extr
         IOFile out(extract_path / "sce_sys" / name, "wb");
         out.writeBytes(pkg.data() + entry.offset, entry.size);
         out.close();
-
-        if (name == "pic1.png") {
-            std::vector<u8> imageData(entry.size);
-            std::memcpy(imageData.data(), pkg.data() + entry.offset, entry.size);
-            QImage image = QImage::fromData((imageData.data()), entry.size);
-            QImage image_ = game_utils.BlurImage(image, image.rect(), 18);
-
-            std::filesystem::path img_path = std::filesystem::path("game_data/") / GetTitleID();
-            std::filesystem::create_directories(img_path);
-            if (!image_.save(QString::fromStdString(img_path.string() + "/pic1.png"), "PNG")) {
-                // qDebug() << "Error: Unable to save image.";
-            }
-        }
     }
 
     // Read the seed

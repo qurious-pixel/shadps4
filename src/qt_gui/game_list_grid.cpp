@@ -33,7 +33,7 @@ GameListGrid::GameListGrid(const QSize& icon_size, QColor icon_color, const qrea
     horizontalHeader()->setVisible(false);
     setShowGrid(false);
     QPalette palette;
-    palette.setColor(QPalette::Base, Qt::lightGray);
+    palette.setColor(QPalette::Base, QColor(230, 230, 230, 80));
     setPalette(palette);
 
     connect(this, &GameListTable::itemClicked, this, &GameListGrid::SetGridBackgroundImage);
@@ -126,9 +126,23 @@ void GameListGrid::SetGridBackgroundImage(QTableWidgetItem* item) {
         return;
     }
     game_info gameinfo = GetGameInfoFromItem(iconItem);
-    QString imagePath = QString::fromStdString(gameinfo->info.pic_path);
+    QString pic1Path = QString::fromStdString(gameinfo->info.pic_path);
+    QString blurredPic1Path =
+        qApp->applicationDirPath() +
+        QString::fromStdString("/game_data/" + gameinfo->info.serial + "/pic1.png");
 
-    QImage img1(imagePath);
+    QImage img1(blurredPic1Path);
+    if (img1.isNull()) {
+        QImage image(pic1Path);
+        img1 = m_game_list_utils.BlurImage(image, image.rect(), 18);
+
+        std::filesystem::path img_path =
+            std::filesystem::path("game_data/") / gameinfo->info.serial;
+        std::filesystem::create_directories(img_path);
+        if (!img1.save(blurredPic1Path, "PNG")) {
+            // qDebug() << "Error: Unable to save image.";
+        }
+    }
     QPixmap blurredPixmap = QPixmap::fromImage(img1);
     QPalette palette;
     palette.setBrush(QPalette::Base, QBrush(blurredPixmap.scaled(size(), Qt::IgnoreAspectRatio)));

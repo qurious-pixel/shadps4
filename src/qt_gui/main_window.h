@@ -4,6 +4,7 @@
 #include <QDragEnterEvent>
 #include <QMainWindow>
 #include <QMimeData>
+#include "main_window_themes.h"
 #include "main_window_ui.h"
 
 class GuiSettings;
@@ -31,7 +32,6 @@ private Q_SLOTS:
     void SetIconSizeActions(int idx) const;
     void ResizeIcons(int index);
     void SaveWindowState() const;
-    void DarkModeSwitch();
 
 private:
     void CreateActions();
@@ -41,10 +41,12 @@ private:
 
     QActionGroup* m_icon_size_act_group = nullptr;
     QActionGroup* m_list_mode_act_group = nullptr;
+    QActionGroup* m_theme_act_group = nullptr;
 
     // Dockable widget frames
     QMainWindow* m_main_window = nullptr;
     GameListFrame* m_game_list_frame = nullptr;
+    WindowThemes m_window_themes;
 
     std::shared_ptr<GuiSettings> m_gui_settings;
 

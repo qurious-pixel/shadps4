@@ -1,4 +1,5 @@
 #pragma once
+#include <QCoreApplication>
 
 #include "custom_dock_widget.h"
 #include "game_list_table.h"

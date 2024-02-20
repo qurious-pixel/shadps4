@@ -133,8 +133,9 @@ private:
         label->setGraphicsEffect(shadowEffect); // Apply shadow effect to the QLabel
 
         layout->addWidget(label);
+        if (column != 7)
+            layout->setAlignment(Qt::AlignCenter);
         widget->setLayout(layout);
-        
         game_list->setItem(row, column, item);
         game_list->setCellWidget(row, column, widget);
     }
