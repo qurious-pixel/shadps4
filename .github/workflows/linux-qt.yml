@@ -33,7 +33,7 @@ jobs:
       run: |
        wget https://apt.llvm.org/llvm.sh
        chmod +x ./llvm.sh
-       sudo ./llvm.sh 17
+       sudo ./llvm.sh 16
     
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -47,7 +47,7 @@ jobs:
         setup-python: false  
           
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER=clang-16 -DCMAKE_CXX_COMPILER=clang++-16
 
     - name: Build
       run: |
