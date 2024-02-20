@@ -3,14 +3,13 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 
+#include "common/io_file.h"
+#include "emulator/file_format/pkg.h"
+#include "emulator/loader.h"
+#include "game_install_dialog.h"
 #include "game_list_frame.h"
 #include "gui_settings.h"
 #include "main_window.h"
-#include "ui_main_window.h"
-
-#include "common/io_file.h"
-#include "emulator/loader.h"
-#include "emulator/file_format/pkg.h"
 
 MainWindow::MainWindow(std::shared_ptr<GuiSettings> gui_settings, QWidget* parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), m_gui_settings(std::move(gui_settings)) {
@@ -26,6 +25,7 @@ MainWindow::~MainWindow() {
 
 bool MainWindow::Init() {
     // add toolbar widgets
+    QApplication::setStyle("Fusion");
     ui->toolBar->setObjectName("mw_toolbar");
     ui->sizeSlider->setRange(0, gui::game_list_max_slider_pos);
     ui->toolBar->addWidget(ui->sizeSliderContainer);
@@ -61,6 +61,14 @@ void MainWindow::CreateActions() {
     m_list_mode_act_group = new QActionGroup(this);
     m_list_mode_act_group->addAction(ui->setlistModeListAct);
     m_list_mode_act_group->addAction(ui->setlistModeGridAct);
+
+    // create action group for themes
+    m_theme_act_group = new QActionGroup(this);
+    m_theme_act_group->addAction(ui->setThemeLight);
+    m_theme_act_group->addAction(ui->setThemeDark);
+    m_theme_act_group->addAction(ui->setThemeGreen);
+    m_theme_act_group->addAction(ui->setThemeBlue);
+    m_theme_act_group->addAction(ui->setThemeViolet);
 }
 
 void MainWindow::CreateDockWindows() {
@@ -111,12 +119,11 @@ void MainWindow::CreateConnects() {
         m_save_slider_pos = true;
         ResizeIcons(index);
     });
-    connect(m_game_list_frame, &GameListFrame::RequestIconSizeChange, this,
-            [this](const int& val) {
-                const int idx = ui->sizeSlider->value() + val;
-                m_save_slider_pos = true;
-                ResizeIcons(idx);
-            });
+    connect(m_game_list_frame, &GameListFrame::RequestIconSizeChange, this, [this](const int& val) {
+        const int idx = ui->sizeSlider->value() + val;
+        m_save_slider_pos = true;
+        ResizeIcons(idx);
+    });
 
     connect(m_list_mode_act_group, &QActionGroup::triggered, this, [this](QAction* act) {
         const bool is_list_act = act == ui->setlistModeListAct;
@@ -150,6 +157,19 @@ void MainWindow::CreateConnects() {
     connect(ui->mw_searchbar, &QLineEdit::textChanged, m_game_list_frame,
             &GameListFrame::SetSearchText);
     connect(ui->bootInstallPkgAct, &QAction::triggered, this, [this] { InstallPkg(); });
+    connect(ui->gameInstallPathAct, &QAction::triggered, this, [this] { InstallDirectory(); });
+
+    // Themes
+    connect(ui->setThemeLight, &QAction::triggered, &m_window_themes,
+            [this]() { m_window_themes.SetWindowTheme(Theme::Light); });
+    connect(ui->setThemeDark, &QAction::triggered, &m_window_themes,
+            [this]() { m_window_themes.SetWindowTheme(Theme::Dark); });
+    connect(ui->setThemeGreen, &QAction::triggered, &m_window_themes,
+            [this]() { m_window_themes.SetWindowTheme(Theme::Green); });
+    connect(ui->setThemeBlue, &QAction::triggered, &m_window_themes,
+            [this]() { m_window_themes.SetWindowTheme(Theme::Blue); });
+    connect(ui->setThemeViolet, &QAction::triggered, &m_window_themes,
+            [this]() { m_window_themes.SetWindowTheme(Theme::Violet); });
 }
 
 void MainWindow::SetIconSizeActions(int idx) const {
@@ -234,14 +254,26 @@ void MainWindow::SaveWindowState() const {
 }
 
 void MainWindow::InstallPkg() {
-    std::string file(QFileDialog::getOpenFileName(this, tr("Install PKG File"), QDir::currentPath(),
-                                                  tr("PKG File (*.PKG)"))
-                         .toStdString());
+    QStringList fileNames = QFileDialog::getOpenFileNames(
+        this, tr("Install PKG Files"), QDir::currentPath(), tr("PKG File (*.PKG)"));
+    int nPkg = fileNames.size();
+    int pkgNum = 0;
+    for (const QString& file : fileNames) {
+        pkgNum++;
+        MainWindow::InstallDragDropPkg(file.toStdString(), pkgNum, nPkg);
+    }
+}
+
+void MainWindow::InstallDragDropPkg(std::string file, int pkgNum, int nPkg) {
+
     if (detectFileType(file) == FILETYPE_PKG) {
         PKG pkg;
         pkg.Open(file);
         std::string failreason;
-        const auto extract_path = std::filesystem::current_path() / "game" / pkg.GetTitleID();
+        const auto extract_path =
+            std::filesystem::path(
+                m_gui_settings->GetValue(gui::settings_install_dir).toString().toStdString()) /
+            pkg.GetTitleID();
         if (!pkg.Extract(file, extract_path, failreason)) {
             QMessageBox::critical(this, "PKG ERROR", QString::fromStdString(failreason),
                                   QMessageBox::Ok, 0);
@@ -255,7 +287,8 @@ void MainWindow::InstallPkg() {
 
             QProgressDialog dialog;
             dialog.setWindowTitle("PKG Extraction");
-            dialog.setLabelText("Extracting PKG please wait");
+            QString extractmsg = QString("Extracting PKG %1/%2").arg(pkgNum).arg(nPkg);
+            dialog.setLabelText(extractmsg);
 
             // Create a QFutureWatcher and connect signals and slots.
             QFutureWatcher<void> futureWatcher;
@@ -273,15 +306,21 @@ void MainWindow::InstallPkg() {
             dialog.exec();
             futureWatcher.waitForFinished();
 
-            auto path = QString::fromStdString(extract_path.string());
-            QMessageBox::information(this, "Extraction Finished",
-                                     "Game successfully installed at " + path, QMessageBox::Ok,
-                                     0);
-            m_game_list_frame->Refresh(true);
+            auto path = m_gui_settings->GetValue(gui::settings_install_dir).toString();
+            if (pkgNum == nPkg) {
+                QMessageBox::information(this, "Extraction Finished",
+                                         "Game successfully installed at " + path, QMessageBox::Ok,
+                                         0);
+                m_game_list_frame->Refresh(true);
+            }
         }
-
     } else {
         QMessageBox::critical(this, "PKG ERROR", "File doesn't appear to be a valid PKG file",
                               QMessageBox::Ok, 0);
     }
+}
+
+void MainWindow::InstallDirectory() {
+    GameInstallDialog dlg(m_gui_settings);
+    dlg.exec();
 }

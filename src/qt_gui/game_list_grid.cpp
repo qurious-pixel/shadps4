@@ -6,8 +6,8 @@
 
 GameListGrid::GameListGrid(const QSize& icon_size, QColor icon_color, const qreal& margin_factor,
                            const qreal& text_factor, const bool& showText)
-    : m_icon_size(icon_size), m_icon_color(std::move(icon_color)),
-      m_margin_factor(margin_factor), m_text_factor(text_factor), m_text_enabled(showText) {
+    : m_icon_size(icon_size), m_icon_color(std::move(icon_color)), m_margin_factor(margin_factor),
+      m_text_factor(text_factor), m_text_enabled(showText) {
     setObjectName("game_grid");
 
     QSize item_size;
@@ -32,6 +32,16 @@ GameListGrid::GameListGrid(const QSize& icon_size, QColor icon_color, const qrea
     verticalHeader()->setVisible(false);
     horizontalHeader()->setVisible(false);
     setShowGrid(false);
+    QPalette palette;
+    palette.setColor(QPalette::Base, QColor(230, 230, 230, 80));
+    setPalette(palette);
+
+    connect(this, &GameListTable::itemClicked, this, &GameListGrid::SetGridBackgroundImage);
+    connect(this, &GameListGrid::ResizedWindowGrid, this, &GameListGrid::SetGridBackgroundImage);
+    connect(this->verticalScrollBar(), &QScrollBar::valueChanged, this,
+            &GameListGrid::RefreshBackgroundImage);
+    connect(this->horizontalScrollBar(), &QScrollBar::valueChanged, this,
+            &GameListGrid::RefreshBackgroundImage);
 }
 
 void GameListGrid::enableText(const bool& enabled) {
@@ -49,7 +59,7 @@ void GameListGrid::setIconSize(const QSize& size) const {
 }
 
 GameListItem* GameListGrid::addItem(const game_info& app, const QString& name, const int& row,
-                                      const int& col) {
+                                    const int& col) {
     GameListItem* item = new GameListItem;
     item->set_icon_func([this, app, item](int) {
         const qreal device_pixel_ratio = devicePixelRatioF();
@@ -100,4 +110,47 @@ GameListItem* GameListGrid::addItem(const game_info& app, const QString& name, c
 
 qreal GameListGrid::getMarginFactor() const {
     return m_margin_factor;
+}
+void GameListGrid::RefreshBackgroundImage() {
+    SetGridBackgroundImage(this->currentItem());
+}
+void GameListGrid::SetGridBackgroundImage(QTableWidgetItem* item) {
+    if (!item) {
+        // handle case where icon item does not exist
+        return;
+    }
+    QTableWidgetItem* iconItem = this->item(item->row(), item->column());
+
+    if (!iconItem) {
+        // handle case where icon item does not exist
+        return;
+    }
+    game_info gameinfo = GetGameInfoFromItem(iconItem);
+    QString pic1Path = QString::fromStdString(gameinfo->info.pic_path);
+    QString blurredPic1Path =
+        qApp->applicationDirPath() +
+        QString::fromStdString("/game_data/" + gameinfo->info.serial + "/pic1.png");
+
+    QImage img1(blurredPic1Path);
+    if (img1.isNull()) {
+        QImage image(pic1Path);
+        img1 = m_game_list_utils.BlurImage(image, image.rect(), 18);
+
+        std::filesystem::path img_path =
+            std::filesystem::path("game_data/") / gameinfo->info.serial;
+        std::filesystem::create_directories(img_path);
+        if (!img1.save(blurredPic1Path, "PNG")) {
+            // qDebug() << "Error: Unable to save image.";
+        }
+    }
+    QPixmap blurredPixmap = QPixmap::fromImage(img1);
+    QPalette palette;
+    palette.setBrush(QPalette::Base, QBrush(blurredPixmap.scaled(size(), Qt::IgnoreAspectRatio)));
+    QColor transparentColor = QColor(135, 206, 235, 80);
+    palette.setColor(QPalette::Highlight, transparentColor);
+    this->setPalette(palette);
+}
+
+void GameListGrid::resizeEvent(QResizeEvent* event) {
+    Q_EMIT ResizedWindowGrid(this->currentItem());
 }

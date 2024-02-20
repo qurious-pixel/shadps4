@@ -61,6 +61,7 @@ inline int get_Index(const QSize& current) {
 
 const QString main_window = "main_window";
 const QString game_list = "GameList";
+const QString settings = "Settings";
 
 const QColor game_list_icon_color = QColor(240, 240, 240, 255);
 
@@ -80,6 +81,8 @@ const GuiSave game_list_iconColor = GuiSave(game_list, "iconColor", game_list_ic
 const GuiSave game_list_listMode = GuiSave(game_list, "listMode", true);
 const GuiSave game_list_textFactor = GuiSave(game_list, "textFactor", qreal{2.0});
 const GuiSave game_list_marginFactor = GuiSave(game_list, "marginFactor", qreal{0.09});
+
+const GuiSave settings_install_dir = GuiSave(settings, "installDirectory", "");
 
 } // namespace gui
 

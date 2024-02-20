@@ -1,13 +1,13 @@
 #pragma once
 
 #include <array>
+#include <cstdio>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <cstdio>
-#include <filesystem>
-#include "common/endian.h"
 #include "common/crypto.h"
+#include "common/endian.h"
 #include "pfs.h"
 
 struct PKGHeader {
@@ -24,11 +24,11 @@ struct PKGHeader {
     u64_be pkg_body_size;   // length of all PKG entries
     u64_be pkg_content_offset;
     u64_be pkg_content_size;
-    u8 pkg_content_id[0x24]; // packages' content ID as a 36-byte string
-    u8 pkg_padding[0xC];     // padding
-    u32_be pkg_drm_type;         // DRM type
-    u32_be pkg_content_type;     // Content type
-    u32_be pkg_content_flags;    // Content flags
+    u8 pkg_content_id[0x24];  // packages' content ID as a 36-byte string
+    u8 pkg_padding[0xC];      // padding
+    u32_be pkg_drm_type;      // DRM type
+    u32_be pkg_content_type;  // Content type
+    u32_be pkg_content_flags; // Content flags
     u32_be pkg_promote_size;
     u32_be pkg_version_date;
     u32_be pkg_version_hash;
@@ -73,7 +73,7 @@ struct PKGHeader {
 struct PKGEntry {
     u32_be id;              // File ID, useful for files without a filename entry
     u32_be filename_offset; // Offset into the filenames table (ID 0x200) where this file's name is
-                             // located
+                            // located
     u32_be flags1;          // Flags including encrypted flag, etc
     u32_be flags2;          // Flags including encryption key index, etc
     u32_be offset;          // Offset into PKG to find the file
@@ -89,7 +89,8 @@ public:
 
     bool Open(const std::string& filepath);
     void ExtractFiles(const int& index);
-    bool Extract(const std::string& filepath, const std::filesystem::path& extract, std::string& failreason);
+    bool Extract(const std::string& filepath, const std::filesystem::path& extract,
+                 std::string& failreason);
 
     u32 GetNumberOfFiles() {
         return fsTable.size();

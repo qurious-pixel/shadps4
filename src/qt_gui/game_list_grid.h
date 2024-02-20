@@ -1,6 +1,10 @@
 #pragma once
+#include <QCoreApplication>
 
+#include "custom_dock_widget.h"
 #include "game_list_table.h"
+#include "game_list_utils.h"
+#include "gui_settings.h"
 
 class GameListGridDelegate;
 
@@ -13,17 +17,40 @@ class GameListGrid : public GameListTable {
     qreal m_text_factor;
     bool m_text_enabled = true;
 
+Q_SIGNALS:
+    void ResizedWindowGrid(QTableWidgetItem* item);
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+
 public:
     explicit GameListGrid(const QSize& icon_size, QColor icon_color, const qreal& margin_factor,
-                            const qreal& text_factor, const bool& showText);
+                          const qreal& text_factor, const bool& showText);
 
     void enableText(const bool& enabled);
     void setIconSize(const QSize& size) const;
     GameListItem* addItem(const game_info& app, const QString& name, const int& row,
-                            const int& col);
+                          const int& col);
 
     [[nodiscard]] qreal getMarginFactor() const;
 
+    void SetGridBackgroundImage(QTableWidgetItem* item);
+    void RefreshBackgroundImage();
+
+    game_info GetGameInfoFromItem(const QTableWidgetItem* item) {
+        if (!item) {
+            return nullptr;
+        }
+
+        const QVariant var = item->data(gui::game_role);
+        if (!var.canConvert<game_info>()) {
+            return nullptr;
+        }
+
+        return var.value<game_info>();
+    }
+
 private:
     GameListGridDelegate* grid_item_delegate;
+    GameListUtils m_game_list_utils;
 };

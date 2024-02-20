@@ -2,8 +2,11 @@
 
 #include <deque>
 #include <QFutureWatcher>
+#include <QGraphicsBlurEffect>
 #include <QHeaderView>
+#include <QLabel>
 #include <QStackedWidget>
+#include <QVBoxLayout>
 #include <QWidget>
 #include <QtConcurrent>
 
@@ -11,6 +14,7 @@
 #include "game_list_grid.h"
 #include "game_list_item.h"
 #include "game_list_table.h"
+#include "game_list_utils.h"
 #include "gui_settings.h"
 
 class GameListFrame : public CustomDockWidget {
@@ -49,10 +53,13 @@ private Q_SLOTS:
     void OnRepaintFinished();
     void OnRefreshFinished();
     void RequestGameMenu(const QPoint& pos);
+    void SetListBackgroundImage(QTableWidgetItem* item);
+    void RefreshListBackgroundImage();
 
 Q_SIGNALS:
     void GameListFrameClosed();
     void RequestIconSizeChange(const int& val);
+    void ResizedWindow(QTableWidgetItem* item);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -82,6 +89,9 @@ private:
     int m_sort_column;
     QMap<QString, QString> m_titles;
 
+    // Game List Utils
+    GameListUtils m_game_list_utils;
+
     // List Mode
     bool m_is_list_layout = true;
     bool m_old_layout_is_list = true;
@@ -106,36 +116,27 @@ private:
     qreal m_margin_factor;
     qreal m_text_factor;
 
-    QString formatSize(qint64 size) {
-        static const QStringList suffixes = {"B", "KB", "MB", "GB", "TB"};
-        int suffixIndex = 0;
+    void SetTableItem(GameListTable* game_list, int row, int column, QString itemStr) {
+        QWidget* widget = new QWidget();
+        QVBoxLayout* layout = new QVBoxLayout();
+        QLabel* label = new QLabel(itemStr);
+        QTableWidgetItem* item = new QTableWidgetItem();
 
-        while (size >= 1024 && suffixIndex < suffixes.size() - 1) {
-            size /= 1024;
-            ++suffixIndex;
-        }
+        label->setStyleSheet("color: white; font-size: 15px; font-weight: bold;");
 
-        return QString("%1 %2").arg(size).arg(suffixes[suffixIndex]);
-    }
+        // Create shadow effect
+        QGraphicsDropShadowEffect* shadowEffect = new QGraphicsDropShadowEffect();
+        shadowEffect->setBlurRadius(5);               // Set the blur radius of the shadow
+        shadowEffect->setColor(QColor(0, 0, 0, 160)); // Set the color and opacity of the shadow
+        shadowEffect->setOffset(2, 2);                // Set the offset of the shadow
 
-    QString getFolderSize(const QDir& dir) {
+        label->setGraphicsEffect(shadowEffect); // Apply shadow effect to the QLabel
 
-        QDirIterator it(dir.absolutePath(), QDirIterator::Subdirectories);
-        qint64 total = 0;
-
-        while (it.hasNext()) {
-            // check if entry is file
-            if (it.fileInfo().isFile()) {
-                total += it.fileInfo().size();
-            }
-            it.next();
-        }
-
-        // if there is a file left "at the end" get it's size
-        if (it.fileInfo().isFile()) {
-            total += it.fileInfo().size();
-        }
-
-        return formatSize(total);
+        layout->addWidget(label);
+        if (column != 7)
+            layout->setAlignment(Qt::AlignCenter);
+        widget->setLayout(layout);
+        game_list->setItem(row, column, item);
+        game_list->setCellWidget(row, column, widget);
     }
 };

@@ -1,10 +1,11 @@
 #include "common/io_file.h"
-#include "emulator/file_format/pkg_type.h"
 #include "emulator/file_format/pkg.h"
+#include "emulator/file_format/pkg_type.h"
 
 #include <zlib-ng.h>
 
-static void DecompressPFSC(std::span<const char> compressed_data, std::span<char> decompressed_data) {
+static void DecompressPFSC(std::span<const char> compressed_data,
+                           std::span<char> decompressed_data) {
     zng_stream decompressStream;
     decompressStream.zalloc = Z_NULL;
     decompressStream.zfree = Z_NULL;
@@ -71,7 +72,8 @@ bool PKG::Open(const std::string& filepath) {
     return true;
 }
 
-bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extract, std::string& failreason) {
+bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extract,
+                  std::string& failreason) {
     extract_path = extract;
     pkgpath = filepath;
     IOFile file(filepath);
@@ -272,11 +274,8 @@ bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extr
 
     // Create Folders.
     folderMap[2] = GetTitleID(); // Set up game path instead of calling it uroot
-    game_dir = std::filesystem::current_path() / "game";
+    game_dir = extract_path.parent_path();
     title_dir = game_dir / GetTitleID();
-
-    // Game dir already created but ok let's leave it for now.
-    std::filesystem::create_directories(title_dir);
 
     for (int i = 0; i < fsTable.size(); i++) {
         const u32 inode_number = fsTable[i].inode;
@@ -290,7 +289,7 @@ bool PKG::Extract(const std::string& filepath, const std::filesystem::path& extr
             // Skip uroot folder. we create our own game uid folder
             if (i > 1) {
                 const auto par_dir = inode_number == 2 ? findDirectory(game_dir, parent_dir)
-                                                        : findDirectory(title_dir, parent_dir);
+                                                       : findDirectory(title_dir, parent_dir);
                 const auto cur_dir = findDirectory(par_dir, current_dir);
 
                 if (cur_dir == "") {
@@ -320,6 +319,9 @@ void PKG::ExtractFiles(const int& index) {
         IOFile inflated;
         inflated.open(file_extracted, "wb");
 
+        IOFile pkgFile; // Open the file for each iteration to avoid conflict.
+        pkgFile.open(pkgpath);
+
         int size_decompressed = 0;
         std::vector<char> compressedData;
         std::vector<char> decompressedData(0x10000);
@@ -340,13 +342,8 @@ void PKG::ExtractFiles(const int& index) {
             int sectorOffsetMask = (sectorOffset + pfsc_offset) & 0xFFFFF000;
             int previousData = (sectorOffset + pfsc_offset) - sectorOffsetMask;
 
-            IOFile file; // Open the file for each iteration to avoid conflict.
-            if (!file.open(pkgpath)) {
-                // return false;
-            }
-
-            file.seek(fileOffset - previousData);
-            file.readBytes(pfsc.data(), pfsc.size());
+            pkgFile.seek(fileOffset - previousData);
+            pkgFile.readBytes(pfsc.data(), pfsc.size());
 
             PKG::crypto.decryptPFS(dataKey, tweakKey, pfsc, pfs_decrypted, currentSector1);
 
@@ -367,11 +364,8 @@ void PKG::ExtractFiles(const int& index) {
                 const u32 write_size = decompressedData.size() - (size_decompressed - bsize);
                 inflated.writeBytes(decompressedData.data(), write_size);
             }
-
-            // Close the file for each iteration to avoid conflict.
-            file.close();
         }
+        pkgFile.close();
         inflated.close();
     }
 }
-
