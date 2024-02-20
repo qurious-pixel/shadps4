@@ -27,7 +27,7 @@ jobs:
 
     - name: Install misc packages
       run: |
-       sudo apt-get update && sudo apt install libx11-dev libgl1-mesa-glx mesa-common-dev libfuse2 libwayland-dev
+       sudo apt-get update && sudo apt install libx11-dev libgl1-mesa-glx mesa-common-dev libfuse2 libwayland-dev libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-icccm4 libxcb-image0-dev libxcb-cursor-dev
 
     - name: Install newer Clang
       run: |
@@ -51,7 +51,7 @@ jobs:
 
     - name: Build
       run: |
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
         find -name shadps4
 
     - name: Run AppImage packaging script
