@@ -46,6 +46,10 @@ qt_add_executable(shadps4
 )
 create_target_directory_groups(shadps4)
 
+if(WIN32)
+    target_sources(shadps4 PRIVATE shadps4.rc)
+endif()
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND MSVC) #ugly probably make it better :D
     target_link_libraries(shadps4 PRIVATE Qt6::Widgets Qt6::Concurrent cryptoppwin zlib)
 else()

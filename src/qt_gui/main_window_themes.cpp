@@ -1,10 +1,13 @@
 #include "main_window_themes.h"
 
-void WindowThemes::SetWindowTheme(Theme theme) {
+void WindowThemes::SetWindowTheme(Theme theme, QLineEdit* mw_searchbar) {
     QPalette themePalette;
 
     switch (theme) {
     case Theme::Light:
+        mw_searchbar->setStyleSheet("background-color: #ffffff; /* Light gray background */"
+                                    "color: #000000;            /* Black text */"
+                                    "padding: 5px;");
         themePalette.setColor(QPalette::Window, QColor(240, 240, 240));   // Light gray
         themePalette.setColor(QPalette::WindowText, Qt::black);           // Black
         themePalette.setColor(QPalette::Base, QColor(230, 230, 230, 80)); // Grayish
@@ -21,6 +24,10 @@ void WindowThemes::SetWindowTheme(Theme theme) {
         break;
 
     case Theme::Dark:
+        mw_searchbar->setStyleSheet("background-color: #1e1e1e; /* Dark background */"
+                                    "color: #ffffff;            /* White text */"
+                                    "border: 1px solid #ffffff; /* White border */"
+                                    "padding: 5px;");
         themePalette.setColor(QPalette::Window, QColor(53, 53, 53));
         themePalette.setColor(QPalette::WindowText, Qt::white);
         themePalette.setColor(QPalette::Base, QColor(25, 25, 25));
@@ -39,7 +46,10 @@ void WindowThemes::SetWindowTheme(Theme theme) {
         break;
 
     case Theme::Green:
-
+        mw_searchbar->setStyleSheet("background-color: #354535; /* Dark green background */"
+                                    "color: #ffffff;            /* White text */"
+                                    "border: 1px solid #ffffff; /* White border */"
+                                    "padding: 5px;");
         themePalette.setColor(QPalette::Window, QColor(53, 69, 53)); // Dark green background
         themePalette.setColor(QPalette::WindowText, Qt::white);      // White text
         themePalette.setColor(QPalette::Base, QColor(25, 40, 25));   // Darker green base
@@ -59,7 +69,10 @@ void WindowThemes::SetWindowTheme(Theme theme) {
         break;
 
     case Theme::Blue:
-
+        mw_searchbar->setStyleSheet("background-color: #283c5a; /* Dark blue background */"
+                                    "color: #ffffff;            /* White text */"
+                                    "border: 1px solid #ffffff; /* White border */"
+                                    "padding: 5px;");
         themePalette.setColor(QPalette::Window, QColor(40, 60, 90)); // Dark blue background
         themePalette.setColor(QPalette::WindowText, Qt::white);      // White text
         themePalette.setColor(QPalette::Base, QColor(20, 40, 60));   // Darker blue base
@@ -79,7 +92,10 @@ void WindowThemes::SetWindowTheme(Theme theme) {
         break;
 
     case Theme::Violet:
-
+        mw_searchbar->setStyleSheet("background-color: #643278; /* Violet background */"
+                                    "color: #ffffff;            /* White text */"
+                                    "border: 1px solid #ffffff; /* White border */"
+                                    "padding: 5px;");
         themePalette.setColor(QPalette::Window, QColor(100, 50, 120)); // Violet background
         themePalette.setColor(QPalette::WindowText, Qt::white);        // White text
         themePalette.setColor(QPalette::Base, QColor(80, 30, 90));     // Darker violet base

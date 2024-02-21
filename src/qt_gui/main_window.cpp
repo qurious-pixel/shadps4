@@ -161,15 +161,15 @@ void MainWindow::CreateConnects() {
 
     // Themes
     connect(ui->setThemeLight, &QAction::triggered, &m_window_themes,
-            [this]() { m_window_themes.SetWindowTheme(Theme::Light); });
+            [this]() { m_window_themes.SetWindowTheme(Theme::Light, ui->mw_searchbar); });
     connect(ui->setThemeDark, &QAction::triggered, &m_window_themes,
-            [this]() { m_window_themes.SetWindowTheme(Theme::Dark); });
+            [this]() { m_window_themes.SetWindowTheme(Theme::Dark, ui->mw_searchbar); });
     connect(ui->setThemeGreen, &QAction::triggered, &m_window_themes,
-            [this]() { m_window_themes.SetWindowTheme(Theme::Green); });
+            [this]() { m_window_themes.SetWindowTheme(Theme::Green, ui->mw_searchbar); });
     connect(ui->setThemeBlue, &QAction::triggered, &m_window_themes,
-            [this]() { m_window_themes.SetWindowTheme(Theme::Blue); });
+            [this]() { m_window_themes.SetWindowTheme(Theme::Blue, ui->mw_searchbar); });
     connect(ui->setThemeViolet, &QAction::triggered, &m_window_themes,
-            [this]() { m_window_themes.SetWindowTheme(Theme::Violet); });
+            [this]() { m_window_themes.SetWindowTheme(Theme::Violet, ui->mw_searchbar); });
 }
 
 void MainWindow::SetIconSizeActions(int idx) const {
