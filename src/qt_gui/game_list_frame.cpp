@@ -59,7 +59,7 @@ GameListFrame::GameListFrame(std::shared_ptr<GuiSettings> gui_settings, QWidget*
     m_game_list->setColumnCount(gui::column_count);
     QPalette palette;
     palette.setColor(QPalette::Base, QColor(230, 230, 230, 80));
-    QColor transparentColor = QColor(135, 206, 235, 80);
+    QColor transparentColor = QColor(135, 206, 235, 40);
     palette.setColor(QPalette::Highlight, transparentColor);
     m_game_list->setPalette(palette);
     m_central_widget = new QStackedWidget(this);
@@ -261,7 +261,7 @@ void GameListFrame::SetListBackgroundImage(QTableWidgetItem* item) {
     QPixmap blurredPixmap = QPixmap::fromImage(img1);
     QPalette palette;
     palette.setBrush(QPalette::Base, QBrush(blurredPixmap.scaled(size(), Qt::IgnoreAspectRatio)));
-    QColor transparentColor = QColor(135, 206, 235, 80);
+    QColor transparentColor = QColor(135, 206, 235, 40);
     palette.setColor(QPalette::Highlight, transparentColor);
     m_game_list->setPalette(palette);
 }

@@ -1,7 +1,8 @@
 
 #pragma once
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QWidget>
+#include <QApplication>
+#include <QWidget>
+#include <QLineEdit>
 
 enum class Theme : int {
     Light,
@@ -14,5 +15,5 @@ enum class Theme : int {
 class WindowThemes : public QObject {
     Q_OBJECT
 public Q_SLOTS:
-    void SetWindowTheme(Theme theme);
+    void SetWindowTheme(Theme theme, QLineEdit* mw_searchbar);
 };

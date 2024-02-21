@@ -146,7 +146,7 @@ void GameListGrid::SetGridBackgroundImage(QTableWidgetItem* item) {
     QPixmap blurredPixmap = QPixmap::fromImage(img1);
     QPalette palette;
     palette.setBrush(QPalette::Base, QBrush(blurredPixmap.scaled(size(), Qt::IgnoreAspectRatio)));
-    QColor transparentColor = QColor(135, 206, 235, 80);
+    QColor transparentColor = QColor(135, 206, 235, 40);
     palette.setColor(QPalette::Highlight, transparentColor);
     this->setPalette(palette);
 }

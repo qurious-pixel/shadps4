@@ -37,7 +37,6 @@ private:
     void CreateActions();
     void CreateDockWindows();
     void CreateConnects();
-    bool isDarkMode;
 
     QActionGroup* m_icon_size_act_group = nullptr;
     QActionGroup* m_list_mode_act_group = nullptr;
