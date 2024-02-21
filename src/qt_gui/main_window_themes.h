@@ -1,8 +1,8 @@
 
 #pragma once
 #include <QApplication>
-#include <QWidget>
 #include <QLineEdit>
+#include <QWidget>
 
 enum class Theme : int {
     Light,
