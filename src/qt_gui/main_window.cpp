@@ -30,7 +30,8 @@ bool MainWindow::Init() {
     ui->sizeSlider->setRange(0, gui::game_list_max_slider_pos);
     ui->toolBar->addWidget(ui->sizeSliderContainer);
     ui->toolBar->addWidget(ui->mw_searchbar);
-
+    setWindowIcon(QIcon(":/shadps4.png"));
+    
     CreateActions();
     CreateDockWindows();
     CreateConnects();
