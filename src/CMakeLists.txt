@@ -46,6 +46,8 @@ qt_add_executable(shadps4
 )
 create_target_directory_groups(shadps4)
 
+qt6_add_resources(RESOURCE_FILES resources.qrc)
+
 if(WIN32)
     target_sources(shadps4 PRIVATE shadps4.rc)
 endif()
