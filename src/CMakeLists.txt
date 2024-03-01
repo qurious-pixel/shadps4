@@ -42,6 +42,7 @@ qt_add_executable(shadps4
     emulator/file_format/pfs.h
     emulator/loader.cpp
     emulator/loader.h
+    resources.qrc
     main.cpp
 )
 create_target_directory_groups(shadps4)
