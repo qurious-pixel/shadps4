@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/images">
-    	<file alias="shadps4.png">../images/shadps4.png</file>
+    	<file alias="shadps4.png">src/images/shadps4.png</file>
     </qresource>
 </RCC>
 
