@@ -75,7 +75,7 @@ void MainWindow::CreateActions() {
 void MainWindow::CreateDockWindows() {
     m_main_window = new QMainWindow();
     m_main_window->setContextMenuPolicy(Qt::PreventContextMenu);
-    m_main_window->setWindowIcon(QIcon(":/shadps4.png"));
+    //m_main_window->setWindowIcon(QIcon(":/shadps4.png"));
 
     m_game_list_frame = new GameListFrame(m_gui_settings, m_main_window);
     m_game_list_frame->setObjectName("gamelist");
