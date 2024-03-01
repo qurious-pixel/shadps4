@@ -68,6 +68,9 @@ public:
         sizePolicy.setHeightForWidth(MainWindow->sizePolicy().hasHeightForWidth());
         MainWindow->setSizePolicy(sizePolicy);
         MainWindow->setMinimumSize(QSize(4, 0));
+        QIcon icon;
+        icon.addFile(QString::fromUtf8(":/images/shadps4.png"), QSize(), QIcon::Normal, QIcon::Off);
+        MainWindow->setWindowIcon(icon);
         MainWindow->setAutoFillBackground(false);
         MainWindow->setAnimated(true);
         MainWindow->setDockNestingEnabled(true);
